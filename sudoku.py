@@ -7,14 +7,43 @@ class Cell:
     * Pointer to the next cell in the row, column and nineSquare
     Methods:
     init() - takes an integer 0-9 or None. Copies to the initial and solved state
+    progress = elimination_loop() - loop through row, column and square loops and eliminate possibilities
+                         if the possibility is limited to one then set the solved field.
+                         returns true if new success is found or possibilities are improved
     *"""
-
-    _potentials = set()
 
     def __init__(self, initial=None) -> None:
         self._check_valid_values(initial)
+        self._potentials = set(range(1, 10))
         self._initial_value = initial
         self._solved_value = initial
+        self._rnext = None
+        self._cnext = None
+        self._snext = None
+
+    @property
+    def rnext(self):
+        return self._rnext
+
+    @rnext.setter
+    def rnext(self, pointer):
+        self._rnext = pointer
+
+    @property
+    def cnext(self):
+        return self._cnext
+
+    @cnext.setter
+    def cnext(self, pointer):
+        self._cnext = pointer
+
+    @property
+    def snext(self):
+        return self._snext
+
+    @snext.setter
+    def snext(self, pointer):
+        self._snext = pointer
 
     def _check_valid_values(self, val):
         """cell can be initialized to a digit 1 - 9 or to None
@@ -44,14 +73,19 @@ class Cell:
             self._initial_value = None
             self._solved_value = None
 
-    def solved(self):
+    @property
+    def solution(self):
         return self._solved_value
 
     def initial(self):
         return self._initial_value
 
+    @property
     def potentials(self):
         return self._potentials
+
+    def clear_potentials(self):
+        self._potentials.clear()
 
     def add_potentials(self, val):
         self._check_valid_values(val)
@@ -64,14 +98,55 @@ class Cell:
         self._check_valid_values(val)
         if isinstance(val, set):
             for item in val:
-                self._potentials.remove(item)
+                if item in self._potentials:
+                    self._potentials.remove(item)
         else:
-            self._potentials.remove(val)
+            if val in self._potentials:
+                self._potentials.remove(val)
+
+    def elimination_loop(self) -> bool:
+        potential_starting_len = len(self.potentials)
+
+        # Iterate over row
+        cell = self.rnext
+        while cell != self:  # stop when you get to the end of the loop
+            if cell.solution:
+                self.remove_potentials(cell.solution)
+            cell = cell.rnext
+        # Iterate over column
+        cell = self.cnext
+        while cell != self:  # stop when you get to the end of the loop
+            if cell.solution:
+                self.remove_potentials(cell.solution)
+            cell = cell.cnext
+        # Iterate over NineSquare
+        cell = self.snext
+        while cell != self:  # stop when you get to the end of the loop
+            if cell.solution:
+                self.remove_potentials(cell.solution)
+            cell = cell.snext
+
+        if len(self._potentials) == 1:
+            self._solved_value = self._potentials.pop()
+            self.clear_potentials()
+        if len(self._potentials) < potential_starting_len:
+            return True
+        else:
+            return False
 
 
 class NineSquare:
     """Represents the 9 cells in a Sudoku square.
-    Provides a building block for building out a full Sudoku Mesh"""
+    Provides a building block for building out a full Sudoku Mesh
+    Instantiate and connect 9 cells in a square
+    Connect the 2 row pointer
+    * initialize(vals) - takes a tuple of 9 values and assigns them to the nine cells
+    * attach_row(self, some_nine_square) - connect the given nine square to self's pointers
+    * attach_col(self, some_nine_square) - connect the given nine square to self's pointers
+    * cell(row, col) - given a row, column returns the cell at that location
+    * elimination_loop() - iterate through all cells and call their elimination_loop method
+                        returns true if any of them made progress
+    """
 
     pass
 
