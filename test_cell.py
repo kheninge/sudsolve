@@ -11,14 +11,14 @@ def setup_cell():
 
 def test_cell_valid_init_5(setup_cell):
     assert setup_cell.solution == 5
-    assert setup_cell.initial() == 5
+    assert setup_cell.initial == 5
 
 
 def test_cell_valid_init_none():
     my_cell = Cell()
     my_cell.init(None)
     assert my_cell.solution is None
-    assert my_cell.initial() is None
+    assert my_cell.initial is None
 
 
 def test_cell_invalid_init_10():
@@ -42,7 +42,7 @@ def test_cell_invalid_init_0():
 def test_cell_before_init_call_empty():
     my_cell = Cell()
     assert my_cell.solution is None
-    assert my_cell.initial() is None
+    assert my_cell.initial is None
     assert len(my_cell.potentials) == 9
 
 
@@ -144,7 +144,7 @@ def test_cell_elimination_loop_solution_not_found():
     assert progress
     assert r1c1.potentials == {3, 5, 8, 9}
     assert r1c1.solution is None
-    assert r1c1.initial() is None
+    assert r1c1.initial is None
     progress = r1c1.elimination_loop()
     # second time through potentials should not change
     assert not progress
@@ -202,4 +202,4 @@ def test_cell_elimination_loop_solution_is_found():
     assert progress
     assert not r1c1.potentials
     assert r1c1.solution == 9
-    assert r1c1.initial() is None
+    assert r1c1.initial is None

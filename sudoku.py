@@ -15,8 +15,7 @@ class Cell:
     def __init__(self, initial=None) -> None:
         self._check_valid_values(initial)
         self._potentials = set(range(1, 10))
-        self._initial_value = initial
-        self._solved_value = initial
+        self.init(initial)
         self._rnext = None
         self._cnext = None
         self._snext = None
@@ -69,6 +68,7 @@ class Cell:
         if val is not None:
             self._initial_value = val
             self._solved_value = val
+            self.clear_potentials()
         else:
             self._initial_value = None
             self._solved_value = None
@@ -77,6 +77,7 @@ class Cell:
     def solution(self):
         return self._solved_value
 
+    @property
     def initial(self):
         return self._initial_value
 
@@ -148,7 +149,48 @@ class NineSquare:
                         returns true if any of them made progress
     """
 
-    pass
+    def __init__(self) -> None:
+        self.ns = []
+        # Instantiate Cells
+        for i in range(9):
+            self.ns.append(Cell())
+        # Connect up rows
+        for i in range(0, 9, 3):
+            self.ns[i].rnext = self.ns[i + 1]
+            self.ns[i + 1].rnext = self.ns[i + 2]
+        # Connect up columns
+        for i in range(3):
+            self.ns[i].cnext = self.ns[i + 3]
+            self.ns[i + 3].cnext = self.ns[i + 6]
+        # Connect up the NineSquare Loop
+        for i in range(8):
+            self.ns[i].snext = self.ns[i + 1]
+        self.ns[8].snext = self.ns[0]
+
+    def initialize(self, vals: tuple):
+        for i in range(9):
+            self.ns[i].init(vals[i])
+
+    def cell(self, r: int, c: int):
+        i = r * 3 + c
+        return self.ns[i]
+
+    def attach_row(self, other) -> None:
+        self.ns[2].rnext = other.cell(0, 0)
+        self.ns[5].rnext = other.cell(1, 0)
+        self.ns[8].rnext = other.cell(2, 0)
+
+    def attach_col(self, other) -> None:
+        self.ns[6].cnext = other.cell(0, 0)
+        self.ns[7].cnext = other.cell(0, 1)
+        self.ns[8].cnext = other.cell(0, 2)
+
+    def elimination_loop(self) -> bool:
+        total_result = False
+        for i in range(9):
+            result = self.ns[i].elimination_loop()
+            total_result = result or total_result
+        return total_result
 
 
 class Sudoku:
