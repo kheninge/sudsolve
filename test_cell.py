@@ -92,7 +92,7 @@ def test_cell_remove_mult_potentials(setup_cell):
     setup_cell.remove_potentials({2, 5})  #
 
 
-def test_cell_elimination_loop_solution_not_found():
+def test_cell_elimination_to_one_loop_solution_not_found():
     """sample 9 cell setup
     | 4 | 7 | _ |
     | 1 | ? | 2 |
@@ -100,14 +100,14 @@ def test_cell_elimination_loop_solution_not_found():
     potentials should be {3, 5, 8, 9}
 
     """
-    r0c0 = Cell(4)
-    r0c1 = Cell(7)
+    r0c0 = Cell(0, 4)
+    r0c1 = Cell(0, 7)
     r0c2 = Cell()
-    r1c0 = Cell(1)
+    r1c0 = Cell(0, 1)
     r1c1 = Cell()
-    r1c2 = Cell(2)
+    r1c2 = Cell(0, 2)
     r2c0 = Cell()
-    r2c1 = Cell(6)
+    r2c1 = Cell(0, 6)
     r2c2 = Cell()
     # row connection
     r0c0.rnext = r0c1
@@ -140,17 +140,17 @@ def test_cell_elimination_loop_solution_not_found():
     r2c1.snext = r2c2
     r2c2.snext = r0c0
 
-    progress = r1c1.elimination_loop()
+    progress = r1c1.elimination_to_one_loop()
     assert progress
     assert r1c1.potentials == {3, 5, 8, 9}
     assert r1c1.solution is None
     assert r1c1.initial is None
-    progress = r1c1.elimination_loop()
+    progress = r1c1.elimination_to_one_loop()
     # second time through potentials should not change
     assert not progress
 
 
-def test_cell_elimination_loop_solution_is_found():
+def test_cell_elimination_to_one_loop_solution_is_found():
     """sample 9 cell setup
     | 4 | 7 | 3 |
     | 1 | ? | 2 |
@@ -158,15 +158,15 @@ def test_cell_elimination_loop_solution_is_found():
     solution should be 9
 
     """
-    r0c0 = Cell(4)
-    r0c1 = Cell(7)
-    r0c2 = Cell(3)
-    r1c0 = Cell(1)
+    r0c0 = Cell(0, 4)
+    r0c1 = Cell(0, 7)
+    r0c2 = Cell(0, 3)
+    r1c0 = Cell(0, 1)
     r1c1 = Cell()
-    r1c2 = Cell(2)
-    r2c0 = Cell(5)
-    r2c1 = Cell(6)
-    r2c2 = Cell(8)
+    r1c2 = Cell(0, 2)
+    r2c0 = Cell(0, 5)
+    r2c1 = Cell(0, 6)
+    r2c2 = Cell(0, 8)
     # row connection
     r0c0.rnext = r0c1
     r0c1.rnext = r0c2
@@ -198,8 +198,32 @@ def test_cell_elimination_loop_solution_is_found():
     r2c1.snext = r2c2
     r2c2.snext = r0c0
 
-    progress = r1c1.elimination_loop()
+    progress = r1c1.elimination_to_one_loop()
     assert progress
     assert not r1c1.potentials
     assert r1c1.solution == 9
     assert r1c1.initial is None
+
+
+def test_cell_single_possible_location():
+    my_cell = Cell()
+    my_cell.clear_potentials()
+    my_cell.add_potentials(3)
+
+    ## This function requires a network of cells for row, col and square
+    row_partner = Cell()
+    col_partner = Cell()
+    square_partner = Cell()
+    row_partner.clear_potentials()  # clear so that they aren't seen by function
+    col_partner.clear_potentials()
+    square_partner.clear_potentials()
+    my_cell.rnext = row_partner
+    my_cell.cnext = col_partner
+    my_cell.snext = square_partner
+    row_partner.rnext = my_cell
+    col_partner.cnext = my_cell
+    square_partner.snext = my_cell
+
+    result = my_cell.single_possible_location()
+    assert result
+    assert my_cell.solution == 3
