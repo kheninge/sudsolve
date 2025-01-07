@@ -17,14 +17,14 @@ class Cell:
                          returns true if new success is found or possibilities are improved
     *"""
 
-    def __init__(self, id: int = 0, initial=None) -> None:
+    def __init__(self, id: int = 0, initial: int | None = None) -> None:
         self.id = id
         self._check_input_values(initial)
         self._potentials = set(range(1, 10))
         self.init(initial)
         self._next = {"row": None, "col": None, "square": None}
 
-    def _check_input_values(self, val):
+    def _check_input_values(self, val: int | None | set) -> None:
         """cell can be initialized to a digit 1 - 9 or to None
         val is either a single int or a set of ints"""
         if val is not None:
@@ -99,22 +99,20 @@ class Cell:
                 self._potentials.remove(val)
 
     def _set_solution(self, val: int):
-        """Set the solution field
-        Clear the potentials field
-        Go through all visible c spaces and remove the value from their potentials"""
+        """Set the solution field. Clear the potentials field. Go through all visible c-spaces and remove solved value from their potentials"""
         self._solved_value = val
         self.clear_potentials()
         logger.info("Cell %d: Solution found: %d", self.id, self._solved_value)
         # For all visibile c spaces, remove solved value from potentials
         for direction in self._next:
             cell = self._next[direction]
-            if not cell:
-                raise Exception("Cell network is not set up correctly")
-            while cell != self:  # stop when you get to the end of the loop
+            while cell != self:
+                if cell is None:
+                    raise Exception("Cell network is not set up correctly")
                 cell.remove_potentials(val)
                 cell = cell._next[direction]
 
-    def init(self, val) -> None:
+    def init(self, val: int | None) -> None:
         """cell can be initialized to a digit 1 - 9 or to None"""
         logger.debug("Init is called for Cell %d", self.id)
         self._check_input_values(val)
@@ -137,10 +135,10 @@ class Cell:
         # Iterate over row, col and square. Remove potentials for any solution
         for direction in self._next:
             cell = self._next[direction]
-            if not cell:
-                raise Exception("Cell network is not set up correctly")
             count = 1
-            while cell != self:  # stop when you get to the end of the loop
+            while cell != self:
+                if cell is None:
+                    raise Exception("Cell network is not set up correctly")
                 if cell.solution:
                     self.remove_potentials(cell.solution)
                 cell = cell._next[direction]
@@ -152,7 +150,7 @@ class Cell:
                         self.id,
                         direction,
                     )
-                    raise Exception("Elimination_to_one infinite loop")
+                    raise Exception("Elimination_to_one has an infinite loop")
 
         if len(self._potentials) == 1:
             # Solved
@@ -189,9 +187,9 @@ class Cell:
                 pot_count[num] += 1
             # Then look at others in the network
             cell = self._next[direction]
-            if not cell:
-                raise Exception("Cell network is not set up correctly")
             while cell != self:  # stop when you get to the end of the loop
+                if cell is None:
+                    raise Exception("Cell network is not set up correctly")
                 for num in cell.potentials:
                     pot_count[num] += 1
                 cell = cell._next[direction]
@@ -331,7 +329,7 @@ class Sudoku:
             self.sudoku[i + 3].attach_col(self.sudoku[i + 6])
             self.sudoku[i + 6].attach_col(self.sudoku[i])
 
-    def initialize(self, init_val):
+    def initialize(self, init_val: tuple) -> None:
         for i in range(9):
             self.sudoku[i].initialize(init_val[i])
         logger.info("Sudoku Class finished initialization")
