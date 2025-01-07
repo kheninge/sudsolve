@@ -1,6 +1,12 @@
 import logging
+from typing import TypeAlias
 
 logger = logging.getLogger(__name__)
+
+## Define some types
+CellVal: TypeAlias = int | None
+NineSquareVal: TypeAlias = tuple[CellVal, ...]
+SudokuVal: TypeAlias = tuple[NineSquareVal, ...]
 
 
 class Cell:
@@ -17,10 +23,10 @@ class Cell:
                          returns true if new success is found or possibilities are improved
     *"""
 
-    def __init__(self, id: int = 0, initial: int | None = None) -> None:
+    def __init__(self, id: int = 0, initial: CellVal = None) -> None:
         self.id: int = id
         self._check_input_values(initial)
-        self._solved_value: int | None = None
+        self._solved_value: CellVal = None
         self._potentials: set[int] = set(range(1, 10))
         self._next: dict[str, "None | Cell"] = {
             "row": None,
@@ -29,7 +35,7 @@ class Cell:
         }
         self.init(initial)
 
-    def _check_input_values(self, val: int | None) -> None:
+    def _check_input_values(self, val: CellVal) -> None:
         """cell can be initialized to a digit 1 - 9 or to None
         val is either a single int or a set of ints"""
         if val is not None:
@@ -63,11 +69,11 @@ class Cell:
         self._next["square"] = pointer
 
     @property
-    def solution(self) -> int | None:
+    def solution(self) -> CellVal:
         return self._solved_value
 
     @property
-    def initial(self) -> int | None:
+    def initial(self) -> CellVal:
         return self._initial_value
 
     @property
@@ -100,7 +106,7 @@ class Cell:
                 cell.remove_potential(val)
                 cell = cell._next[direction]
 
-    def init(self, val: int | None) -> None:
+    def init(self, val: CellVal) -> None:
         """cell can be initialized to a digit 1 - 9 or to None"""
         logger.debug("Init is called for Cell %d", self.id)
         self._check_input_values(val)
@@ -207,8 +213,8 @@ class NineSquare:
     """
 
     def __init__(self, id: int = 0) -> None:
-        self.id = id
-        self.ns = []  # A list of cells to represent a NineSquare
+        self.id: int = id
+        self.ns: list[Cell] = []  # A list of cells to represent a NineSquare
         # Instantiate Cells
         for i in range(9):
             # TODO - 9 is hard code everywhere. Should it be a macro?
@@ -228,12 +234,12 @@ class NineSquare:
             self.ns[i].snext = self.ns[i + 1]
         self.ns[8].snext = self.ns[0]
 
-    def initialize(self, vals: tuple[int | None]) -> None:
+    def initialize(self, vals: NineSquareVal) -> None:
         for i in range(9):
             self.ns[i].init(vals[i])
 
     @property
-    def solutions(self) -> tuple[int]:
+    def solutions(self) -> NineSquareVal:
         sols = []
         for i in range(9):
             sols.append(self.ns[i].solution)
@@ -303,7 +309,7 @@ class Sudoku:
     """
 
     def __init__(self) -> None:
-        self.sudoku = []
+        self.sudoku: list[NineSquare] = []
         for i in range(9):
             self.sudoku.append(NineSquare(i))
         # Connect up the rows
@@ -317,13 +323,13 @@ class Sudoku:
             self.sudoku[i + 3].attach_col(self.sudoku[i + 6])
             self.sudoku[i + 6].attach_col(self.sudoku[i])
 
-    def initialize(self, init_val: tuple[tuple[int | None]]) -> None:
+    def initialize(self, init_val: SudokuVal) -> None:
         for i in range(9):
             self.sudoku[i].initialize(init_val[i])
         logger.info("Sudoku Class finished initialization")
 
     @property
-    def solutions(self) -> tuple[tuple[int]]:
+    def solutions(self) -> SudokuVal:
         sols = []
         for i in range(9):
             sols.append(self.sudoku[i].solutions)
