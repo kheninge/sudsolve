@@ -18,53 +18,48 @@ class Cell:
     *"""
 
     def __init__(self, id: int = 0, initial: int | None = None) -> None:
-        self.id = id
+        self.id: int = id
         self._check_input_values(initial)
-        self._solved_value = None
-        self._potentials = set(range(1, 10))
+        self._solved_value: int | None = None
+        self._potentials: set[int] = set(range(1, 10))
+        self._next: dict[str, "None | Cell"] = {
+            "row": None,
+            "col": None,
+            "square": None,
+        }
         self.init(initial)
-        self._next = {"row": None, "col": None, "square": None}
 
-    def _check_input_values(self, val: int | None | set) -> None:
+    def _check_input_values(self, val: int | None) -> None:
         """cell can be initialized to a digit 1 - 9 or to None
         val is either a single int or a set of ints"""
         if val is not None:
-            # Could be a set
-            if isinstance(val, set):
-                for item in val:
-                    if type(item) is not int:
-                        raise ValueError
-                    if item < 1 or item > 9:
-                        raise ValueError
-            else:
-                # Could be a scalar
-                if type(val) is not int:
-                    raise ValueError
-                if val < 1 or val > 9:
-                    raise ValueError
+            if type(val) is not int:
+                raise ValueError
+            if val < 1 or val > 9:
+                raise ValueError
 
     @property
-    def rnext(self):
+    def rnext(self) -> "Cell | None":
         return self._next["row"]
 
     @rnext.setter
-    def rnext(self, pointer):
+    def rnext(self, pointer: "Cell | None") -> None:
         self._next["row"] = pointer
 
     @property
-    def cnext(self):
+    def cnext(self) -> "Cell | None":
         return self._next["col"]
 
     @cnext.setter
-    def cnext(self, pointer):
+    def cnext(self, pointer: "Cell | None"):
         self._next["col"] = pointer
 
     @property
-    def snext(self):
+    def snext(self) -> "Cell | None":
         return self._next["square"]
 
     @snext.setter
-    def snext(self, pointer):
+    def snext(self, pointer: "Cell | None"):
         self._next["square"] = pointer
 
     @property
@@ -76,7 +71,7 @@ class Cell:
         return self._initial_value
 
     @property
-    def potentials(self) -> set:
+    def potentials(self) -> set[int]:
         return self._potentials
 
     def clear_potentials(self) -> None:
@@ -233,29 +228,29 @@ class NineSquare:
             self.ns[i].snext = self.ns[i + 1]
         self.ns[8].snext = self.ns[0]
 
-    def initialize(self, vals: tuple):
+    def initialize(self, vals: tuple[int | None]) -> None:
         for i in range(9):
             self.ns[i].init(vals[i])
 
     @property
-    def solutions(self) -> tuple:
+    def solutions(self) -> tuple[int]:
         sols = []
         for i in range(9):
             sols.append(self.ns[i].solution)
         return tuple(sols)
 
-    def cell(self, row: int, col: int):
+    def cell(self, row: int, col: int) -> Cell:
         """returns a cell pases on row and column coordinates"""
         i = row * 3 + col
         return self.ns[i]
 
-    def attach_row(self, other) -> None:
+    def attach_row(self, other: "NineSquare") -> None:
         """Connect this NineSquare to another to the right"""
         self.ns[2].rnext = other.cell(0, 0)
         self.ns[5].rnext = other.cell(1, 0)
         self.ns[8].rnext = other.cell(2, 0)
 
-    def attach_col(self, other) -> None:
+    def attach_col(self, other: "NineSquare") -> None:
         """Connect this NineSquare to another below"""
         self.ns[6].cnext = other.cell(0, 0)
         self.ns[7].cnext = other.cell(0, 1)
@@ -322,13 +317,13 @@ class Sudoku:
             self.sudoku[i + 3].attach_col(self.sudoku[i + 6])
             self.sudoku[i + 6].attach_col(self.sudoku[i])
 
-    def initialize(self, init_val: tuple) -> None:
+    def initialize(self, init_val: tuple[tuple[int | None]]) -> None:
         for i in range(9):
             self.sudoku[i].initialize(init_val[i])
         logger.info("Sudoku Class finished initialization")
 
     @property
-    def solutions(self) -> tuple:
+    def solutions(self) -> tuple[tuple[int]]:
         sols = []
         for i in range(9):
             sols.append(self.sudoku[i].solutions)
