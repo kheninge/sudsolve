@@ -12,6 +12,7 @@ def setup_cell():
 def test_cell_valid_init_5(setup_cell):
     assert setup_cell.solution == 5
     assert setup_cell.initial == 5
+    assert setup_cell.solved
 
 
 def test_cell_valid_init_none():
@@ -19,6 +20,7 @@ def test_cell_valid_init_none():
     my_cell.init(None)
     assert my_cell.solution is None
     assert my_cell.initial is None
+    assert not my_cell.solved
 
 
 def test_cell_invalid_init_10():

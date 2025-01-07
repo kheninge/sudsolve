@@ -108,11 +108,14 @@ def test_sudoku_simple_solved_after_multiple_calls():
     )
     puzzle.initialize(init1)
     progress = True
+    assert not puzzle.solved
     while progress:
         progress = puzzle.elimination_to_one()
     progress = True
+    assert not puzzle.solved
     while progress:
         progress = puzzle.single_possible_location()
+    assert puzzle.solved
     sols = puzzle.solutions
     assert sols == (
         (2, 4, 3, 5, 7, 6, 9, 1, 8),

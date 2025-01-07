@@ -50,6 +50,7 @@ def test_nine_square_init_connect_eliminate():
     solution00 = n00.solutions
     solution11 = n11.solutions
 
+    assert not n00.solved
     assert solution00 == (None, None, 1, None, None, None, 4, None, 9)
     assert solution11 == (None, 1, None, 5, None, None, None, None, 9)
     assert result1 and result2 and result3 and result4

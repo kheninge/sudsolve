@@ -45,6 +45,10 @@ class Cell:
                 raise ValueError
 
     @property
+    def solved(self) -> bool:
+        return self.solution is not None
+
+    @property
     def rnext(self) -> "Cell | None":
         return self._next["row"]
 
@@ -111,8 +115,8 @@ class Cell:
         logger.debug("Init is called for Cell %d", self.id)
         self._check_input_values(val)
         if val is not None:
-            # TODO should I just call _set_solution here?
             self._initial_value = val
+            # Can't  just call _set_solution here as network isn't guarenteed to be set up yet
             self._solved_value = val
             self.clear_potentials()
         else:
@@ -195,7 +199,7 @@ class Cell:
             for num in self.potentials:
                 if num in pot_list:
                     self._set_solution(num)
-                    return True
+                    return True  # short circuit if solution found
         return False
 
 
@@ -237,6 +241,13 @@ class NineSquare:
     def initialize(self, vals: NineSquareVal) -> None:
         for i in range(9):
             self.ns[i].init(vals[i])
+
+    @property
+    def solved(self) -> bool:
+        all_solved = True
+        for cell in self.ns:
+            all_solved &= cell.solved
+        return all_solved
 
     @property
     def solutions(self) -> NineSquareVal:
@@ -299,9 +310,9 @@ class Sudoku:
       (0  1  2 9 10 11 18 19 20) ( 3 4 5 ... ) (6 7 8 ... )
 
     solutions() - output a tuple of 81 values with the current state of solutions. Same format as initialize tuple
-    puzzle_print() - print the current state of the puzzle in a text output
     Methods for solving the sudoku puzzle:
         * Elimination to one (possibility paring)
+        * Single Possible Location
         * Aligned possibilities
         * Filled pairs
         * Filled triplets
@@ -327,6 +338,13 @@ class Sudoku:
         for i in range(9):
             self.sudoku[i].initialize(init_val[i])
         logger.info("Sudoku Class finished initialization")
+
+    @property
+    def solved(self) -> bool:
+        all_solved = True
+        for ns in self.sudoku:
+            all_solved &= ns.solved
+        return all_solved
 
     @property
     def solutions(self) -> SudokuVal:
