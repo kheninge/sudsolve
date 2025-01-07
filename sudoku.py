@@ -2,6 +2,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class Cell:
     """Datastructure to represent the state of a single cell includes:
     * Initial state of the puzzle
@@ -109,32 +110,35 @@ class Cell:
             if val in self._potentials:
                 self._potentials.remove(val)
 
-    def _add_solution(self, val: int):
-        """ Set the solution field
-            Clear the potentials field
-            Go through all visible c spaces and remove the value from their potentials"""
+    def _make_solution(self, val: int):
+        """Set the solution field
+        Clear the potentials field
+        Go through all visible c spaces and remove the value from their potentials"""
         self._solved_value = val
         self.clear_potentials()
         logger.info("Cell %d: Solution found: %d", self.id, self._solved_value)
         # For all visibile c spaces, remove solved value from potentials
         for direction in self._next:
             cell = self._next[direction]
+            if not cell:
+                raise Exception("Cell network is not set up correctly")
             while cell != self:  # stop when you get to the end of the loop
                 cell.remove_potentials(val)
                 cell = cell._next[direction]
-
 
     def elimination_to_one_loop(self) -> bool:
         """Eliminate all solutions seen in constrained spaces and if a single potential is left designate it
         the solution"""
         potential_starting_len = len(self.potentials)
         if self.solution:
-            #Already solved
+            # Already solved
             return False
 
         # Iterate over row, col and square. Remove potentials for any solution
         for direction in self._next:
             cell = self._next[direction]
+            if not cell:
+                raise Exception("Cell network is not set up correctly")
             count = 1
             while cell != self:  # stop when you get to the end of the loop
                 if cell.solution:
@@ -143,53 +147,66 @@ class Cell:
                 count += 1
                 ## Error condition, should never be more than 9 cells in a loop
                 if count > 9:
-                    logger.error("Cell %d is looping more than 9 times for %s direction", self.id, direction)
+                    logger.error(
+                        "Cell %d is looping more than 9 times for %s direction",
+                        self.id,
+                        direction,
+                    )
                     raise Exception("Elimination_to_one infinite loop")
 
         if len(self._potentials) == 1:
-            #Solved
+            # Solved
             mysolution = self._potentials.pop()
-            self._add_solution(mysolution)
+            self._make_solution(mysolution)
         if len(self._potentials) < potential_starting_len:
-            logger.debug("Cell %d Elimination_to_one made progress on potentials", self.id)
+            logger.debug(
+                "Cell %d Elimination_to_one made progress on potentials", self.id
+            )
             return True
         else:
-            logger.debug("Cell %d Elimination_to_one didn't make progress on potentials", self.id)
+            logger.debug(
+                "Cell %d Elimination_to_one didn't make progress on potentials", self.id
+            )
             return False
 
     def single_possible_location(self) -> bool:
         """Look through potentials determined by other rules. If a potential number is only present within this cell
         for a given constrained space, then that is the solution"""
-        #TODO - Have to call elimination to one again in between each update. Or the potentials will be wrong
+        # TODO - Have to call elimination to one again in between each update. Or the potentials will be wrong
         # Or need to loop through the constrained spaces visible from the cell and remove the solved value
 
         if self.solution:
-            #Already solved
+            # Already solved
             return False
 
-        # Iterate over row, col and square. Remove potentials for any solution
+        # Iterate over row, col and square.
         for direction in self._next:
-            #First pass, gather statistics on potential counts in pot_count
-            pot_count = {1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0}
+            # First pass, gather statistics on potential counts in pot_count
+            pot_count = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0}
             pot_list = set()
             # First examine yourself
             for num in self.potentials:
                 pot_count[num] += 1
+            # Then look at others in the network
             cell = self._next[direction]
+            if not cell:
+                raise Exception("Cell network is not set up correctly")
             while cell != self:  # stop when you get to the end of the loop
                 for num in cell.potentials:
                     pot_count[num] += 1
                 cell = cell._next[direction]
-            #Analyze pot_list and see if list all unique potentials
+            # Analyze potential_count statistics to see if there are any unique (just one) potential
+            # If so then build a list of those numbers
             for num, count in pot_count.items():
                 if count == 1:
                     pot_list.add(num)
-            #Now if the cell in question has a unique answer set it as the solution
+            # Now see if any of our cell potentials is in the list, if so set it as the solution
             for num in self.potentials:
                 if num in pot_list:
-                    self._add_solution(num)
+                    self._make_solution(num)
                     return True
         return False
+
 
 class NineSquare:
     """Represents the 9 cells in a Sudoku square.
@@ -211,7 +228,7 @@ class NineSquare:
         for i in range(9):
             self.ns.append(Cell(i))
         # Connect up rows of the NineSquare
-        for i in range(0, 9, 3):
+        for i in (0, 3, 6):
             self.ns[i].rnext = self.ns[i + 1]
             self.ns[i + 1].rnext = self.ns[i + 2]
             self.ns[i + 2].rnext = self.ns[i]
@@ -257,19 +274,26 @@ class NineSquare:
         logger.debug("NineSquare %d starting elimination_to_one_loop", self.id)
         total_result = False
         for i in range(9):
-            result = self.ns[i].elimination_to_one_loop()
-            total_result = result or total_result
-        logger.debug("NineSquare %d completing elimination_to_one_loop", self.id)
+            total_result |= self.ns[i].elimination_to_one_loop()
+        logger.debug(
+            "NineSquare %d completing elimination_to_one_loop, result is ",
+            self.id,
+            total_result,
+        )
         return total_result
 
     def single_possible_location(self) -> bool:
         logger.debug("NineSquare %d starting single_possible_location", self.id)
         total_result = False
         for i in range(9):
-            result = self.ns[i].single_possible_location()
-            total_result = result or total_result
-        logger.debug("NineSquare %d completing single_possible_location", self.id)
+            total_result |= self.ns[i].single_possible_location()
+        logger.debug(
+            "NineSquare %d completing single_possible_location, result is ",
+            self.id,
+            total_result,
+        )
         return total_result
+
 
 class Sudoku:
     """Represents the datastructure for a full Sudoku mesh and includes methods
@@ -296,14 +320,16 @@ class Sudoku:
         self.sudoku = []
         for i in range(9):
             self.sudoku.append(NineSquare(i))
-        for i in range(0, 9, 3):
-            self.sudoku[i].attach_row(self.sudoku[i+1])
-            self.sudoku[i+1].attach_row(self.sudoku[i+2])
-            self.sudoku[i+2].attach_row(self.sudoku[i])
+        # Connect up the rows
+        for i in (0, 3, 6):
+            self.sudoku[i].attach_row(self.sudoku[i + 1])
+            self.sudoku[i + 1].attach_row(self.sudoku[i + 2])
+            self.sudoku[i + 2].attach_row(self.sudoku[i])
+        # Connect up the columns
         for i in range(3):
-            self.sudoku[i].attach_col(self.sudoku[i+3])
-            self.sudoku[i+3].attach_col(self.sudoku[i+6])
-            self.sudoku[i+6].attach_col(self.sudoku[i])
+            self.sudoku[i].attach_col(self.sudoku[i + 3])
+            self.sudoku[i + 3].attach_col(self.sudoku[i + 6])
+            self.sudoku[i + 6].attach_col(self.sudoku[i])
 
     def initialize(self, init_val):
         for i in range(9):
@@ -317,7 +343,6 @@ class Sudoku:
             sols.append(self.sudoku[i].solutions)
         return tuple(sols)
 
-
     def elimination_to_one(self) -> bool:
         """Run the elimination to one algorithm for each non-solved
         cell. Returns true if a new solution is found or if a possibility is
@@ -326,19 +351,21 @@ class Sudoku:
         logger.info("Sudoku Class starting elimination_to_one")
         total_result = False
         for square in self.sudoku:
-            progress = square.elimination_to_one_loop()
-            total_result = total_result or progress
-        logger.info("Sudoku Class finishing elimination_to_one")
+            total_result |= square.elimination_to_one_loop()
+        logger.info(
+            "Sudoku Class finishing elimination_to_one result is %d", total_result
+        )
         return total_result
 
     def single_possible_location(self) -> bool:
         """Run the single possible location algorithm for each non-solved
-        cell. Returns true if a new solution is found """
+        cell. Returns true if a new solution is found"""
 
         logger.info("Sudoku Class starting single_possible_location")
         total_result = False
         for square in self.sudoku:
-            progress = square.single_possible_location()
-            total_result = total_result or progress
-        logger.info("Sudoku Class finishing single_possible_location")
+            total_result |= square.single_possible_location()
+        logger.info(
+            "Sudoku Class finishing single_possible_location result is %d", total_result
+        )
         return total_result
