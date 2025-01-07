@@ -30,7 +30,7 @@ def test_cell_invalid_init_10():
 def test_cell_invalid_init_string():
     with pytest.raises(ValueError):
         my_cell = Cell()
-        my_cell.init("foo")
+        my_cell.init("foo")  # type: ignore
 
 
 def test_cell_invalid_init_0():
@@ -47,49 +47,27 @@ def test_cell_before_init_call_empty():
 
 
 def test_cell_add_single_potentials(setup_cell):
-    setup_cell.add_potentials(3)
+    setup_cell.add_potential(3)
     foo = setup_cell.potentials
     assert 3 in foo
 
 
 def test_invalid_potentials(setup_cell):
     with pytest.raises(ValueError):
-        setup_cell.add_potentials(10)
-
-
-def test_cell_add_mult_potentials(setup_cell):
-    setup_cell.clear_potentials()
-    vals = {1, 2, 5}
-    setup_cell.add_potentials(vals)
-    foo = setup_cell.potentials
-    assert 1 in foo
-    assert 2 in foo
-    assert 5 in foo
-    assert 7 not in foo
+        setup_cell.add_potential(10)
 
 
 def test_remove_single_potentials(setup_cell):
     setup_cell.clear_potentials()
-    setup_cell.add_potentials({1, 2, 5})
-    setup_cell.remove_potentials(2)
+    for i in (1, 2, 5):
+        setup_cell.add_potential(i)
+    setup_cell.remove_potential(2)
     foo = setup_cell.potentials
     assert 1 in foo
     assert 2 not in foo
     assert 5 in foo
     assert 7 not in foo
-    setup_cell.remove_potentials(2)  # do it twice to ensure no error
-
-
-def test_cell_remove_mult_potentials(setup_cell):
-    setup_cell.clear_potentials()
-    setup_cell.add_potentials({1, 2, 5})
-    setup_cell.remove_potentials({2, 5})
-    foo = setup_cell.potentials
-    assert 1 in foo
-    assert 2 not in foo
-    assert 5 not in foo
-    assert 7 not in foo
-    setup_cell.remove_potentials({2, 5})  #
+    setup_cell.remove_potential(2)  # do it twice to ensure no error
 
 
 def test_cell_elimination_to_one_loop_solution_not_found():
@@ -208,7 +186,7 @@ def test_cell_elimination_to_one_loop_solution_is_found():
 def test_cell_single_possible_location():
     my_cell = Cell()
     my_cell.clear_potentials()
-    my_cell.add_potentials(3)
+    my_cell.add_potential(3)
 
     ## This function requires a network of cells for row, col and square
     row_partner = Cell()

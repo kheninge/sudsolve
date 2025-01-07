@@ -20,6 +20,7 @@ class Cell:
     def __init__(self, id: int = 0, initial: int | None = None) -> None:
         self.id = id
         self._check_input_values(initial)
+        self._solved_value = None
         self._potentials = set(range(1, 10))
         self.init(initial)
         self._next = {"row": None, "col": None, "square": None}
@@ -67,38 +68,30 @@ class Cell:
         self._next["square"] = pointer
 
     @property
-    def solution(self):
+    def solution(self) -> int | None:
         return self._solved_value
 
     @property
-    def initial(self):
+    def initial(self) -> int | None:
         return self._initial_value
 
     @property
-    def potentials(self):
+    def potentials(self) -> set:
         return self._potentials
 
-    def clear_potentials(self):
+    def clear_potentials(self) -> None:
         self._potentials.clear()
 
-    def add_potentials(self, val):
+    def add_potential(self, val: int) -> None:
         self._check_input_values(val)
-        if isinstance(val, set):
-            self._potentials.update(val)
-        else:
-            self._potentials.add(val)
+        self._potentials.add(val)
 
-    def remove_potentials(self, val):
+    def remove_potential(self, val: int) -> None:
         self._check_input_values(val)
-        if isinstance(val, set):
-            for item in val:
-                if item in self._potentials:
-                    self._potentials.remove(item)
-        else:
-            if val in self._potentials:
-                self._potentials.remove(val)
+        if val in self._potentials:
+            self._potentials.remove(val)
 
-    def _set_solution(self, val: int):
+    def _set_solution(self, val: int) -> None:
         """Set the solution field. Clear the potentials field. Go through all visible c-spaces and remove solved value from their potentials"""
         self._solved_value = val
         self.clear_potentials()
@@ -109,7 +102,7 @@ class Cell:
             while cell != self:
                 if cell is None:
                     raise Exception("Cell network is not set up correctly")
-                cell.remove_potentials(val)
+                cell.remove_potential(val)
                 cell = cell._next[direction]
 
     def init(self, val: int | None) -> None:
@@ -117,6 +110,7 @@ class Cell:
         logger.debug("Init is called for Cell %d", self.id)
         self._check_input_values(val)
         if val is not None:
+            # TODO should I just call _set_solution here?
             self._initial_value = val
             self._solved_value = val
             self.clear_potentials()
@@ -140,7 +134,7 @@ class Cell:
                 if cell is None:
                     raise Exception("Cell network is not set up correctly")
                 if cell.solution:
-                    self.remove_potentials(cell.solution)
+                    self.remove_potential(cell.solution)
                 cell = cell._next[direction]
                 count += 1
                 ## Error condition, should never be more than 9 cells in a loop
@@ -170,8 +164,6 @@ class Cell:
     def single_possible_location(self) -> bool:
         """Look through potentials determined by other rules. If a potential number is only present within this cell
         for a given constrained space, then that is the solution"""
-        # TODO - Have to call elimination to one again in between each update. Or the potentials will be wrong
-        # Or need to loop through the constrained spaces visible from the cell and remove the solved value
 
         if self.solution:
             # Already solved
@@ -224,7 +216,8 @@ class NineSquare:
         self.ns = []  # A list of cells to represent a NineSquare
         # Instantiate Cells
         for i in range(9):
-            self.ns.append(Cell(i))
+            # TODO - 9 is hard code everywhere. Should it be a macro?
+            self.ns.append(Cell(self.id * 9 + i))
         # Connect up rows of the NineSquare
         for i in (0, 3, 6):
             self.ns[i].rnext = self.ns[i + 1]
