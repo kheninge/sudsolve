@@ -128,3 +128,30 @@ def test_sudoku_simple_solved_after_multiple_calls():
         (7, 2, 8, 4, 1, 3, 6, 9, 5),
         (6, 1, 5, 8, 7, 9, 2, 3, 4),
     )
+
+
+def test_sudoku_with_Daniel():
+    """Using the same map as above. Run elimination to one twice. Then single possible location"""
+    puzzle = Sudoku()
+    init1 = (
+        (None, None, None, 2, 1, 8, 4, 9, None),
+        (2, None, None, None, 3, 9, 8, 6, 7),
+        (None, 3, 8, None, 4, 7, 2, 5, 1),
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, None, None, 9, 5, 4, None, 6),
+        (8, None, None, None, None, 4, None, None, None),
+    )
+    puzzle.initialize(init1)
+    progress = True
+    while progress:
+        progress = puzzle.elimination_to_one()
+    print("After step 1")
+    print(puzzle.solutions)
+    progress = True
+    while progress:
+        progress = puzzle.single_possible_location()
+    print("After step 2")
+    print(puzzle.solutions)

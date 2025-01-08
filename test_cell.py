@@ -5,7 +5,7 @@ from sudoku import Cell
 @pytest.fixture(scope="function")
 def setup_cell():
     my_cell = Cell()
-    my_cell.init(5)
+    my_cell.initialize(5)
     yield my_cell
 
 
@@ -17,7 +17,7 @@ def test_cell_valid_init_5(setup_cell):
 
 def test_cell_valid_init_none():
     my_cell = Cell()
-    my_cell.init(None)
+    my_cell.initialize(None)
     assert my_cell.solution is None
     assert my_cell.initial is None
     assert not my_cell.solved
@@ -26,19 +26,19 @@ def test_cell_valid_init_none():
 def test_cell_invalid_init_10():
     with pytest.raises(ValueError):
         my_cell = Cell()
-        my_cell.init(10)
+        my_cell.initialize(10)
 
 
 def test_cell_invalid_init_string():
     with pytest.raises(ValueError):
         my_cell = Cell()
-        my_cell.init("foo")  # type: ignore
+        my_cell.initialize("foo")  # type: ignore
 
 
 def test_cell_invalid_init_0():
     with pytest.raises(ValueError):
         my_cell = Cell()
-        my_cell.init(0)
+        my_cell.initialize(0)
 
 
 def test_cell_before_init_call_empty():

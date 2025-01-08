@@ -33,16 +33,43 @@ class Cell:
             "col": None,
             "square": None,
         }
-        self.init(initial)
+        self.initialize(initial)
 
     def _check_input_values(self, val: CellVal) -> None:
         """cell can be initialized to a digit 1 - 9 or to None
         val is either a single int or a set of ints"""
+
         if val is not None:
             if type(val) is not int:
                 raise ValueError
             if val < 1 or val > 9:
                 raise ValueError
+
+    def _check_network(self) -> bool:
+        """Check to make sure everything is connected properly, make sure no endless loops
+        on network traversals. Only call this function once"""
+        # Iterate over row, col and square.
+        for direction in self._next:
+            cell = self._next[direction]
+            count = 1
+            while cell != self:
+                if cell is None:
+                    raise Exception("Cell network is not set up correctly")
+                cell = cell._next[direction]
+                count += 1
+                ## Error condition, should never be more than 9 cells in a loop
+                if count > 9:
+                    logger.error(
+                        "Cell %d is looping more than 9 times for %s direction",
+                        self.id,
+                        direction,
+                    )
+                    raise Exception("Elimination_to_one has an infinite loop")
+        return True
+
+    @property
+    def connection_ok(self) -> bool:
+        return self._check_network()
 
     @property
     def solved(self) -> bool:
@@ -110,7 +137,7 @@ class Cell:
                 cell.remove_potential(val)
                 cell = cell._next[direction]
 
-    def init(self, val: CellVal) -> None:
+    def initialize(self, val: CellVal) -> None:
         """cell can be initialized to a digit 1 - 9 or to None"""
         logger.debug("Init is called for Cell %d", self.id)
         self._check_input_values(val)
@@ -122,6 +149,7 @@ class Cell:
         else:
             self._initial_value = None
             self._solved_value = None
+            self._potentials = set(range(1, 10))
 
     def elimination_to_one_loop(self) -> bool:
         """Eliminate all solutions seen in constrained spaces and if a single potential is left designate it
@@ -134,22 +162,12 @@ class Cell:
         # Iterate over row, col and square. Remove potentials for any solution
         for direction in self._next:
             cell = self._next[direction]
-            count = 1
             while cell != self:
                 if cell is None:
                     raise Exception("Cell network is not set up correctly")
                 if cell.solution:
                     self.remove_potential(cell.solution)
                 cell = cell._next[direction]
-                count += 1
-                ## Error condition, should never be more than 9 cells in a loop
-                if count > 9:
-                    logger.error(
-                        "Cell %d is looping more than 9 times for %s direction",
-                        self.id,
-                        direction,
-                    )
-                    raise Exception("Elimination_to_one has an infinite loop")
 
         if len(self._potentials) == 1:
             # Solved
@@ -240,7 +258,7 @@ class NineSquare:
 
     def initialize(self, vals: NineSquareVal) -> None:
         for i in range(9):
-            self.ns[i].init(vals[i])
+            self.ns[i].initialize(vals[i])
 
     @property
     def solved(self) -> bool:
@@ -333,8 +351,12 @@ class Sudoku:
             self.sudoku[i].attach_col(self.sudoku[i + 3])
             self.sudoku[i + 3].attach_col(self.sudoku[i + 6])
             self.sudoku[i + 6].attach_col(self.sudoku[i])
+        # Run a quick check of the completed sudoku network from the cell perspective
+        # if it fails it will trigger an exception, so the answer isn't really needed.
+        _ = self.sudoku[0].cell(0, 0).connection_ok
 
     def initialize(self, init_val: SudokuVal) -> None:
+        """Used to initialize state of the puzzle first time or to reset it for subsequent puzzles"""
         for i in range(9):
             self.sudoku[i].initialize(init_val[i])
         logger.info("Sudoku Class finished initialization")
