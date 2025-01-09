@@ -151,15 +151,12 @@ class Cell:
             self._solved_value = None
             self._potentials = set(range(1, 10))
 
-    def elimination_to_one_loop(self) -> bool:
-        """Eliminate all solutions seen in constrained spaces and if a single potential is left designate it
-        the solution"""
-        potential_starting_len = len(self.potentials)
-        if self.solution:
-            # Already solved
-            return False
+    def _update_potentials(self) -> bool:
+        """Loop through all cstates and remove potentials from the list for any present
+        This is the first step before any rule, so making this a seperate function so it can be called by each
+        rule"""
 
-        # Iterate over row, col and square. Remove potentials for any solution
+        potential_starting_len = len(self.potentials)
         for direction in self._next:
             cell = self._next[direction]
             while cell != self:
@@ -169,20 +166,27 @@ class Cell:
                     self.remove_potential(cell.solution)
                 cell = cell._next[direction]
 
+        if len(self._potentials) < potential_starting_len:
+            logger.debug("Cell %d made progress on potentials", self.id)
+            return True
+        else:
+            return False
+
+    def elimination_to_one_loop(self) -> bool:
+        """Eliminate all solutions seen in constrained spaces and if a single potential is left designate it
+        the solution"""
+        if self.solution:
+            # Already solved
+            return False
+
+        progress = self._update_potentials()
         if len(self._potentials) == 1:
             # Solved
             mysolution = self._potentials.pop()
             self._set_solution(mysolution)
-        if len(self._potentials) < potential_starting_len:
-            logger.debug(
-                "Cell %d Elimination_to_one made progress on potentials", self.id
-            )
-            return True
-        else:
-            logger.debug(
-                "Cell %d Elimination_to_one didn't make progress on potentials", self.id
-            )
-            return False
+            progress = True
+
+        return progress
 
     def single_possible_location(self) -> bool:
         """Look through potentials determined by other rules. If a potential number is only present within this cell
@@ -192,6 +196,7 @@ class Cell:
             # Already solved
             return False
 
+        progress = self._update_potentials()
         # Iterate over row, col and square.
         for direction in self._next:
             # First pass, gather statistics on potential counts in pot_count
@@ -218,7 +223,7 @@ class Cell:
                 if num in pot_list:
                     self._set_solution(num)
                     return True  # short circuit if solution found
-        return False
+        return progress
 
 
 class NineSquare:

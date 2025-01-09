@@ -23,4 +23,4 @@ def test_convert_to_ns_format(open_yaml):
         (None, 1, None, None, 7, 9, None, None, 4),
     )
     converted_puzzles = sudsolver.convert_to_ns_format(open_yaml)
-    assert converted_puzzles["puzzlepack1"] == init1
+    assert converted_puzzles["puzzlepack01"] == init1

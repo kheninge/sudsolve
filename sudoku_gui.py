@@ -15,8 +15,6 @@ from sudoku import NineSquareVal, Sudoku, SudokuVal
 
 
 # TODO
-# * choose a puzzle from a list
-# * Give the name of the current puzzle
 # * Color squares with changes
 # * Swap out a label with hints in the appropriate spots (3x3)
 # * Indicate when the puzzle is solved, somehow
