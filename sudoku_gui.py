@@ -34,7 +34,7 @@ class SSolveMain(QMainWindow):
         self.sudoku = sudoku
         self.puzzle_dict = puzzle_dict
 
-        self.setWindowTitle("Suduko Logical Rule Solver")
+        self.setWindowTitle("Kurt's Suduko Logical Rule Solver")
 
         # Suduko Grip Layout
         layout = QGridLayout()
@@ -90,12 +90,12 @@ class NineSquareView(QWidget):
         layout = QGridLayout()
         for i in range(3):
             for j in range(3):
-                value_widget = QLabel()
-                value_widget.setStyleSheet("border: 1px solid black; font-size: 18pt;")
-                value_widget.setFixedSize(75, 75)
-                value_widget.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
-                self.cells.append(value_widget)
-                layout.addWidget(value_widget, i, j)
+                cell_widget = QLabel()
+                cell_widget.setStyleSheet("border: 1px solid black; font-size: 18pt;")
+                cell_widget.setFixedSize(75, 75)
+                cell_widget.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+                self.cells.append(cell_widget)
+                layout.addWidget(cell_widget, i, j)
         self.setLayout(layout)
 
     def update_cells(self, data: NineSquareVal):
@@ -136,7 +136,12 @@ class ControlButtons(QWidget):
         for it in self.rules:  # Set size
             self.rules[it].setFixedWidth(self.rule_width)
 
-        header_label = QLabel("Sudoku Logic Rules - Click Button to Apply")
+        header_label = QLabel("Logic Solutions")
+        header_label.setStyleSheet("font-weight: bold; font-size: 12pt;")
+        header_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        control_label = QLabel("Controls")
+        control_label.setStyleSheet("font-weight: bold; font-size: 12pt;")
+        control_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
 
         # Layout Formatting
         layout_rules = QHBoxLayout()
@@ -146,10 +151,11 @@ class ControlButtons(QWidget):
         for i, ct in enumerate(self.controls.values()):
             layout_controls.addWidget(ct, i)
         layout = QVBoxLayout()
-        layout.addWidget(header_label)
         layout.addWidget(HLine())
+        layout.addWidget(header_label)
         layout.addLayout(layout_rules)
         layout.addWidget(HLine())
+        layout.addWidget(control_label)
         layout.addLayout(layout_controls)
         self.setLayout(layout)
 

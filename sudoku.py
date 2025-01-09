@@ -8,8 +8,10 @@ CellVal: TypeAlias = int | None
 NineSquareVal: TypeAlias = tuple[CellVal, ...]
 SudokuVal: TypeAlias = tuple[NineSquareVal, ...]
 
-# TODO think about moving update_potentials to init and run it after each rule? How can we give the progress credit to
-# the rule that made progress
+
+# TODO:
+# *  Publish as an executable to windows
+# *  Publish to linux and mac?
 
 
 class Cell:
