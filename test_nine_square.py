@@ -53,7 +53,7 @@ def test_nine_square_init_connect_eliminate():
     assert not n00.solved
     assert solution00 == (None, None, 1, None, None, None, 4, None, 9)
     assert solution11 == (None, 1, None, 5, None, None, None, None, 9)
-    assert result1 and result2 and result3 and result4
+    assert not (result1 or result2 or result3 or result4)
     assert n00.cell(0, 0).potentials == {3, 5, 6, 7, 8}
     assert n00.cell(2, 1).potentials == {2, 3, 5, 8}
     assert not n11.cell(1, 0).potentials

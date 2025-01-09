@@ -121,7 +121,7 @@ def test_cell_elimination_to_one_loop_solution_not_found():
     r2c2.snext = r0c0
 
     progress = r1c1.elimination_to_one_loop()
-    assert progress
+    assert not progress
     assert r1c1.potentials == {3, 5, 8, 9}
     assert r1c1.solution is None
     assert r1c1.initial is None

@@ -8,6 +8,9 @@ CellVal: TypeAlias = int | None
 NineSquareVal: TypeAlias = tuple[CellVal, ...]
 SudokuVal: TypeAlias = tuple[NineSquareVal, ...]
 
+# TODO think about moving update_potentials to init and run it after each rule? How can we give the progress credit to
+# the rule that made progress
+
 
 class Cell:
     """Datastructure to represent the state of a single cell includes:
@@ -179,7 +182,8 @@ class Cell:
             # Already solved
             return False
 
-        progress = self._update_potentials()
+        progress = False
+        _ = self._update_potentials()
         if len(self._potentials) == 1:
             # Solved
             mysolution = self._potentials.pop()
@@ -196,7 +200,7 @@ class Cell:
             # Already solved
             return False
 
-        progress = self._update_potentials()
+        _ = self._update_potentials()
         # Iterate over row, col and square.
         for direction in self._next:
             # First pass, gather statistics on potential counts in pot_count
@@ -223,7 +227,7 @@ class Cell:
                 if num in pot_list:
                     self._set_solution(num)
                     return True  # short circuit if solution found
-        return progress
+        return False
 
 
 class NineSquare:
