@@ -50,8 +50,9 @@ class SSolveMain(QMainWindow):
         control_widget.rules["spl_rule"].clicked.connect(
             self.sudoku.single_possible_location
         )
-        control_widget.rules["eto_rule"].clicked.connect(self.update_ninesquares)
-        control_widget.rules["spl_rule"].clicked.connect(self.update_ninesquares)
+        # Update cells on every button press
+        for it in control_widget.rules.values():
+            it.clicked.connect(self.update_ninesquares)
 
     def update_ninesquares(self):
         data = self.sudoku.solutions
