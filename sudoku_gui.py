@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import (
     QApplication,
+    QComboBox,
     QGridLayout,
     QMainWindow,
     QPushButton,
@@ -13,12 +14,27 @@ from PySide6.QtCore import Qt
 from sudoku import NineSquareVal, Sudoku, SudokuVal
 
 
+# TODO
+# * choose a puzzle from a list
+# * Give the name of the current puzzle
+# * Color squares with changes
+# * Swap out a label with hints in the appropriate spots (3x3)
+# * Indicate when the puzzle is solved, somehow
+# * hot keys for the Buttons
+# * scripting language to save order of button pushes
+# * puzzle editing mode instead of having to edit the yaml file directly (stretch)
+# * code remaining rules
+
+
 class SSolveMain(QMainWindow):
-    def __init__(self, app: QApplication, sudoku: Sudoku) -> None:
+    def __init__(
+        self, app: QApplication, sudoku: Sudoku, puzzle_dict: dict[str, SudokuVal]
+    ) -> None:
         super().__init__()
 
         self.app = app
         self.sudoku = sudoku
+        self.puzzle_dict = puzzle_dict
 
         self.setWindowTitle("Suduko Logical Rule Solver")
 
@@ -34,7 +50,7 @@ class SSolveMain(QMainWindow):
         puzzle_widget.setLayout(layout)
 
         # Control Widget Added to Bottom
-        control_widget = ControlButtons()
+        control_widget = ControlButtons(puzzle_dict)
         main_layout = QVBoxLayout()
         main_layout.addWidget(puzzle_widget)
         main_layout.addWidget(control_widget)
@@ -44,7 +60,9 @@ class SSolveMain(QMainWindow):
 
         # Controls Buttons Connect Up
         control_widget.controls["close"].clicked.connect(self.app.quit)
+        control_widget.controls["start"].clicked.connect(self.sudoku.initialize)
         control_widget.controls["start"].clicked.connect(self.update_ninesquares)
+        control_widget.controls["new_puzzle"].textActivated.connect(self.load_puzzle)
         # Rules Buttons Connect Up
         control_widget.rules["eto_rule"].clicked.connect(self.sudoku.elimination_to_one)
         control_widget.rules["spl_rule"].clicked.connect(
@@ -58,6 +76,11 @@ class SSolveMain(QMainWindow):
         data = self.sudoku.solutions
         for i, it in enumerate(self.ns):
             it.update_cells(data[i])
+
+    def load_puzzle(self, t: str) -> None:
+        self.sudoku.load(self.puzzle_dict[t])
+        self.sudoku.initialize()
+        self.update_ninesquares()
 
 
 class NineSquareView(QWidget):
@@ -87,18 +110,20 @@ class NineSquareView(QWidget):
 
 class ControlButtons(QWidget):
     control_height = 50
-    control_width = 120
+    control_width = 130
     rule_width = 200
 
-    def __init__(self) -> None:
+    def __init__(self, puzzle_dict: dict[str, SudokuVal]) -> None:
         super().__init__()
 
         # Control Buttons
         self.controls = {
-            "new_puzzle": QPushButton("New Puzzle"),
-            "start": QPushButton("Start"),
+            "new_puzzle": QComboBox(),
+            "start": QPushButton("Re-Start"),
             "close": QPushButton("Exit"),
         }
+        self.controls["new_puzzle"].setPlaceholderText("Choose a Puzzle")
+        self.controls["new_puzzle"].addItems(puzzle_dict.keys())
         for foo in self.controls:  # Set size
             self.controls[foo].setFixedSize(self.control_width, self.control_height)
 

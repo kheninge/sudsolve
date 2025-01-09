@@ -16,7 +16,8 @@ def test_sudoku_initialize_and_solutions_match():
     )
 
     puzzle = Sudoku()
-    puzzle.initialize(init1)
+    puzzle.load(init1)
+    puzzle.initialize()
     sols = puzzle.solutions
     assert sols == init1
 
@@ -60,7 +61,8 @@ def test_sudoku_elimination_to_one():
         (7, None, None, 4, None, None, None, 9, None),
         (None, 1, None, None, 7, 9, None, None, 4),
     )
-    puzzle.initialize(init1)
+    puzzle.load(init1)
+    puzzle.initialize()
     progress = puzzle.elimination_to_one()
     assert progress
     sols = puzzle.solutions
@@ -83,7 +85,8 @@ def test_sudoku_single_possible_location():
         (7, None, None, 4, None, None, None, 9, None),
         (None, 1, None, None, 7, 9, None, None, 4),
     )
-    puzzle.initialize(init1)
+    puzzle.load(init1)
+    puzzle.initialize()
     progress = puzzle.elimination_to_one()
     assert progress
     progress = puzzle.single_possible_location()
@@ -106,7 +109,8 @@ def test_sudoku_simple_solved_after_multiple_calls():
         (7, None, None, 4, None, None, None, 9, None),
         (None, 1, None, None, 7, 9, None, None, 4),
     )
-    puzzle.initialize(init1)
+    puzzle.load(init1)
+    puzzle.initialize()
     progress = True
     assert not puzzle.solved
     while progress:
@@ -144,7 +148,8 @@ def test_sudoku_with_Daniel():
         (None, None, None, None, 9, 5, 4, None, 6),
         (8, None, None, None, None, 4, None, None, None),
     )
-    puzzle.initialize(init1)
+    puzzle.load(init1)
+    puzzle.initialize()
     progress = True
     while progress:
         progress = puzzle.elimination_to_one()

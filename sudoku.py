@@ -324,7 +324,8 @@ class Sudoku:
         | 3 | 4 | 5 |
         | 6 | 7 | 8 |
 
-    initialize() - Given a tuple of 81 values. Actually a tuple of nine tuples in NineSquare order
+    initialize(tuple) -  if tuple is given, loads that tuple, otherwise re-initializes the last one loaded set/reset the state of the puzzle to initial state specified by load function
+    Given a tuple of 81 values. Actually a tuple of nine tuples in NineSquare order
       (0  1  2 9 10 11 18 19 20) ( 3 4 5 ... ) (6 7 8 ... )
 
     solutions() - output a tuple of 81 values with the current state of solutions. Same format as initialize tuple
@@ -337,7 +338,110 @@ class Sudoku:
         * Inferred line
     """
 
+    blank_puzzle = (
+        (
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+        (
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+        (
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+        (
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+        (
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+        (
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+        (
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+        (
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+        (
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ),
+    )
+
     def __init__(self) -> None:
+        self.init_val = self.blank_puzzle
         self.sudoku: list[NineSquare] = []
         for i in range(9):
             self.sudoku.append(NineSquare(i))
@@ -355,10 +459,13 @@ class Sudoku:
         # if it fails it will trigger an exception, so the answer isn't really needed.
         _ = self.sudoku[0].cell(0, 0).connection_ok
 
-    def initialize(self, init_val: SudokuVal) -> None:
+    def load(self, init_val: SudokuVal):
+        self.init_val = init_val
+
+    def initialize(self) -> None:
         """Used to initialize state of the puzzle first time or to reset it for subsequent puzzles"""
         for i in range(9):
-            self.sudoku[i].initialize(init_val[i])
+            self.sudoku[i].initialize(self.init_val[i])
         logger.info("Sudoku Class finished initialization")
 
     @property
