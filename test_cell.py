@@ -72,6 +72,32 @@ def test_remove_single_potentials(setup_cell):
     setup_cell.remove_potential(2)  # do it twice to ensure no error
 
 
+def test_cell_consistency_check():
+    """sample 9 cell setup
+    | 4 | 4 |
+    | 1 | 2 |
+
+    """
+    r0c0 = Cell(0, 4)
+    r0c1 = Cell(0, 4)
+    r1c0 = Cell(0, 1)
+    r1c1 = Cell(0, 2)
+    # connections
+    r0c0.rnext = r0c1
+    r0c1.rnext = r0c0
+    r1c0.rnext = r1c1
+    r1c1.rnext = r1c0
+    r0c0.cnext = r1c0
+    r0c1.cnext = r1c1
+    r1c0.cnext = r0c0
+    r1c1.cnext = r0c1
+    r0c0.snext = r0c1
+    r0c1.snext = r1c0
+    r1c0.snext = r1c1
+    r1c1.snext = r0c0
+    assert not r0c0.check_consistency()  # should fail
+
+
 def test_cell_elimination_to_one_loop_solution_not_found():
     """sample 9 cell setup
     | 4 | 7 | _ |
@@ -121,6 +147,7 @@ def test_cell_elimination_to_one_loop_solution_not_found():
     r2c2.snext = r0c0
 
     progress = r1c1.elimination_to_one_loop()
+    assert r1c1.check_consistency()  # should pass
     assert not progress
     assert r1c1.potentials == {3, 5, 8, 9}
     assert r1c1.solution is None

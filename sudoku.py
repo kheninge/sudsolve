@@ -128,6 +128,27 @@ class Cell:
         if val in self._potentials:
             self._potentials.remove(val)
 
+    def check_consistency(self) -> bool:
+        """Check that current solution state is legal. Used to catch any logic problems early, shouldn't find them
+        if there are no errors"""
+
+        for direction in self._next:
+            solution_count = dict.fromkeys(range(1, 10), 0)
+            cell = self
+            while True:
+                if cell is None:
+                    raise Exception("Cell network is not set up correctly")
+                if cell.solution:
+                    solution_count[cell.solution] += 1
+                cell = cell._next[direction]
+                if cell == self:
+                    break
+            for i in solution_count:
+                if solution_count[i] > 1:
+                    logger.error("Found solution inconsistency for solution %d", i)
+                    return False
+        return True
+
     def _set_solution(self, val: int) -> None:
         """Set the solution field. Clear the potentials field. Go through all visible c-spaces and remove solved value from their potentials"""
         self._solved_value = val
@@ -206,7 +227,7 @@ class Cell:
         # Iterate over row, col and square.
         for direction in self._next:
             # First pass, gather statistics on potential counts in pot_count
-            pot_count = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0}
+            pot_count = dict.fromkeys(range(1, 10), 0)
             pot_list = set()
             # First examine yourself
             for num in self.potentials:
@@ -301,6 +322,12 @@ class NineSquare:
         self.ns[6].cnext = other.cell(0, 0)
         self.ns[7].cnext = other.cell(0, 1)
         self.ns[8].cnext = other.cell(0, 2)
+
+    def check_consistency(self) -> bool:
+        total_result = True
+        for i in range(9):
+            total_result &= self.ns[i].check_consistency()
+        return total_result
 
     def elimination_to_one_loop(self) -> bool:
         logger.debug("NineSquare %d starting elimination_to_one_loop", self.id)
@@ -406,6 +433,12 @@ class Sudoku:
             sols.append(self.sudoku[i].solutions)
         return tuple(sols)
 
+    def check_consistency(self) -> bool:
+        total_result = True
+        for i in range(9):
+            total_result &= self.sudoku[i].check_consistency()
+        return total_result
+
     def elimination_to_one(self) -> bool:
         """Run the elimination to one algorithm for each non-solved
         cell. Returns true if a new solution is found or if a possibility is
@@ -420,6 +453,8 @@ class Sudoku:
             "Sudoku Class finishing elimination_to_one result is %d", total_result
         )
         self._last_rule_progressed = total_result
+        if not self.check_consistency():
+            raise Exception("elimination_to_one failed check_consistency")
         return total_result
 
     def single_possible_location(self) -> bool:
@@ -435,4 +470,6 @@ class Sudoku:
             "Sudoku Class finishing single_possible_location result is %d", total_result
         )
         self._last_rule_progressed = total_result
+        if not self.check_consistency():
+            raise Exception("single_possible_location failed check_consistency")
         return total_result
