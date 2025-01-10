@@ -11,19 +11,19 @@ from PySide6.QtWidgets import (
     QFrame,
 )
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QShortcut, QKeySequence
 from sudoku import NineSquareVal, Sudoku, SudokuVal
 
 
 # TODO:
 # * Color squares with changes
-# * Write a consistency checker - ensure that sudoku state doesn't violate any sudoku rules - Flag any errors in the
-#       status field
 # * Swap out a label with hints in the appropriate spots (3x3)
-# * Indicate when the puzzle is solved, somehow
 # * hot keys for the Buttons
-# * scripting language to save order of button pushes
-# * puzzle editing mode instead of having to edit the yaml file directly (stretch)
 # * code remaining rules
+# * scripting language to save order of button pushes (stretch)
+# * puzzle editing mode instead of having to edit the yaml file directly (stretch)
+# * Keep a list of button pushes. Have a back and foward button which will replay. Could save solutions off to file
+# as well, like the scripting language item above?
 
 
 class SSolveMain(QMainWindow):
@@ -76,6 +76,18 @@ class SSolveMain(QMainWindow):
         # Update cells on every button press
         for it in self.control_widget.rules.values():
             it.clicked.connect(self.update_gui)
+
+        # Shortcut Definitions
+        shortcut_quit = QShortcut(QKeySequence("q"), self)
+        shortcut_quit.activated.connect(self.app.quit)
+        shortcut_exit = QShortcut(QKeySequence("x"), self)
+        shortcut_exit.activated.connect(self.app.quit)
+        shortcut_restart = QShortcut(QKeySequence("r"), self)
+        shortcut_restart.activated.connect(self.sudoku.initialize)
+        shortcut_eto = QShortcut(QKeySequence("1"), self)
+        shortcut_eto.activated.connect(self.sudoku.elimination_to_one)
+        shortcut_spl = QShortcut(QKeySequence("2"), self)
+        shortcut_spl.activated.connect(self.sudoku.single_possible_location)
 
     def update_gui(self) -> None:
         data = self.sudoku.solutions
@@ -139,8 +151,8 @@ class ControlButtons(QWidget):
         # Control Buttons
         self.controls = {
             "new_puzzle": QComboBox(),
-            "start": QPushButton("Re-Start"),
-            "close": QPushButton("Exit"),
+            "start": QPushButton("Re-Start (r)"),
+            "close": QPushButton("Exit (q)"),
         }
         self.controls["new_puzzle"].setPlaceholderText("Choose a Puzzle")
         self.controls["new_puzzle"].addItems(puzzle_dict.keys())
@@ -158,7 +170,7 @@ class ControlButtons(QWidget):
         for it in self.rules:  # Set size
             self.rules[it].setFixedWidth(self.rule_width)
 
-        header_label = QLabel("Logic Solutions")
+        header_label = QLabel("Logic Solution Rules")
         header_label.setStyleSheet("font-weight: bold; font-size: 12pt;")
         header_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         control_label = QLabel("Controls")
@@ -166,7 +178,7 @@ class ControlButtons(QWidget):
         control_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
         self.status_label = QLabel()
         self.status_label.setStyleSheet(self.status_normal_style)
-        self.status_label.setAlignment(Qt.AlignRight)
+        self.status_label.setAlignment(Qt.AlignHCenter)
 
         # Layout Formatting
         layout_rules = QHBoxLayout()
@@ -181,7 +193,7 @@ class ControlButtons(QWidget):
         layout.addWidget(header_label)
         layout.addLayout(layout_rules)
         layout.addWidget(HLine())
-        layout.addWidget(control_label)
+        # layout.addWidget(control_label)
         layout.addLayout(layout_controls)
         self.setLayout(layout)
 
