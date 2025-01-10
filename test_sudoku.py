@@ -74,6 +74,7 @@ def test_sudoku_elimination_to_one():
 def test_sudoku_single_possible_location():
     """Using the same map as above. Run elimination to one twice. Then single possible location"""
     puzzle = Sudoku()
+    assert not puzzle.last_rule_progressed
     init1 = (
         (2, None, None, 5, 7, None, None, 1, None),
         (None, 7, None, None, None, 4, None, None, 6),
@@ -89,8 +90,10 @@ def test_sudoku_single_possible_location():
     puzzle.initialize()
     progress = puzzle.elimination_to_one()
     assert progress
+    assert puzzle.last_rule_progressed
     progress = puzzle.single_possible_location()
     assert progress
+    assert puzzle.last_rule_progressed
     sols = puzzle.solutions
     assert sols[0] == (2, 4, None, 5, 7, 6, 9, 1, 8)
 

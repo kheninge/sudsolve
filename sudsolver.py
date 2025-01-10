@@ -7,16 +7,16 @@ import yaml
 
 
 def main():
-    ### Read the yaml file, convert the dictionary list to tuples in the format
-    ### expected by Sudoku class
+    # Read the yaml file, convert the dictionary list to SudokuVal format
     with open("sudoku.yaml", "r") as file:
         stored_puzzles = yaml.safe_load(file)
-
     puzzles_ninesquare_fmt = convert_to_ns_format(stored_puzzles)
 
+    # Model
+    solver = sudoku.Sudoku()
+    # Gui
     app = QApplication()
-    puzzle = sudoku.Sudoku()
-    window = SSolveMain(app, puzzle, puzzles_ninesquare_fmt)
+    window = SSolveMain(app, solver, puzzles_ninesquare_fmt)
     window.show()
     app.exec()
 

@@ -14,8 +14,10 @@ from PySide6.QtCore import Qt
 from sudoku import NineSquareVal, Sudoku, SudokuVal
 
 
-# TODO
+# TODO:
 # * Color squares with changes
+# * Write a consistency checker - ensure that sudoku state doesn't violate any sudoku rules - Flag any errors in the
+#       status field
 # * Swap out a label with hints in the appropriate spots (3x3)
 # * Indicate when the puzzle is solved, somehow
 # * hot keys for the Buttons
@@ -33,10 +35,11 @@ class SSolveMain(QMainWindow):
         self.app = app
         self.sudoku = sudoku
         self.puzzle_dict = puzzle_dict
+        self._status: str | None = None
 
         self.setWindowTitle("Kurt's Suduko Logical Rule Solver")
 
-        # Suduko Grip Layout
+        # Suduko Grid Layout
         layout = QGridLayout()
         self.ns = []  # Keep a list of nine-squares
         for i in range(3):
@@ -48,37 +51,53 @@ class SSolveMain(QMainWindow):
         puzzle_widget.setLayout(layout)
 
         # Control Widget Added to Bottom
-        control_widget = ControlButtons(puzzle_dict)
+        self.control_widget = ControlButtons(puzzle_dict)
         main_layout = QVBoxLayout()
         main_layout.addWidget(puzzle_widget)
-        main_layout.addWidget(control_widget)
+        main_layout.addWidget(self.control_widget)
         main_widget = QWidget()
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)
 
         # Controls Buttons Connect Up
-        control_widget.controls["close"].clicked.connect(self.app.quit)
-        control_widget.controls["start"].clicked.connect(self.sudoku.initialize)
-        control_widget.controls["start"].clicked.connect(self.update_ninesquares)
-        control_widget.controls["new_puzzle"].textActivated.connect(self.load_puzzle)
+        self.control_widget.controls["close"].clicked.connect(self.app.quit)
+        self.control_widget.controls["start"].clicked.connect(self.sudoku.initialize)
+        self.control_widget.controls["start"].clicked.connect(self.update_gui)
+        self.control_widget.controls["new_puzzle"].textActivated.connect(
+            self.load_puzzle
+        )
         # Rules Buttons Connect Up
-        control_widget.rules["eto_rule"].clicked.connect(self.sudoku.elimination_to_one)
-        control_widget.rules["spl_rule"].clicked.connect(
+        self.control_widget.rules["eto_rule"].clicked.connect(
+            self.sudoku.elimination_to_one
+        )
+        self.control_widget.rules["spl_rule"].clicked.connect(
             self.sudoku.single_possible_location
         )
         # Update cells on every button press
-        for it in control_widget.rules.values():
-            it.clicked.connect(self.update_ninesquares)
+        for it in self.control_widget.rules.values():
+            it.clicked.connect(self.update_gui)
 
-    def update_ninesquares(self):
+    def update_gui(self) -> None:
         data = self.sudoku.solutions
         for i, it in enumerate(self.ns):
             it.update_cells(data[i])
+        self.update_status()
+
+    def update_status(self) -> None:
+        if self.sudoku.initial_state:
+            status = "Initial"
+        elif self.sudoku.solved:
+            status = "Solved"
+        elif self.sudoku.last_rule_progressed:
+            status = "Progress"
+        else:
+            status = "No Progress"
+        self.control_widget.update_status(status)
 
     def load_puzzle(self, t: str) -> None:
         self.sudoku.load(self.puzzle_dict[t])
         self.sudoku.initialize()
-        self.update_ninesquares()
+        self.update_gui()
 
 
 class NineSquareView(QWidget):
@@ -111,6 +130,9 @@ class ControlButtons(QWidget):
     control_width = 130
     rule_width = 200
 
+    status_normal_style = "font-size: 16pt;"
+    status_success_style = "color: green; font-size: 16pt;"
+
     def __init__(self, puzzle_dict: dict[str, SudokuVal]) -> None:
         super().__init__()
 
@@ -142,6 +164,9 @@ class ControlButtons(QWidget):
         control_label = QLabel("Controls")
         control_label.setStyleSheet("font-weight: bold; font-size: 12pt;")
         control_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.status_label = QLabel()
+        self.status_label.setStyleSheet(self.status_normal_style)
+        self.status_label.setAlignment(Qt.AlignRight)
 
         # Layout Formatting
         layout_rules = QHBoxLayout()
@@ -150,6 +175,7 @@ class ControlButtons(QWidget):
         layout_controls = QHBoxLayout()
         for i, ct in enumerate(self.controls.values()):
             layout_controls.addWidget(ct, i)
+        layout_controls.addWidget(self.status_label, len(self.controls.values()) + 1)
         layout = QVBoxLayout()
         layout.addWidget(HLine())
         layout.addWidget(header_label)
@@ -159,8 +185,12 @@ class ControlButtons(QWidget):
         layout.addLayout(layout_controls)
         self.setLayout(layout)
 
-        # Controls Buttons Connect Up
-        # self.controls["close"].clicked.connect(self.app.quit)
+    def update_status(self, status: str) -> None:
+        self.status_label.setText(status)
+        if status == "Solved":
+            self.status_label.setStyleSheet(self.status_success_style)
+        else:
+            self.status_label.setStyleSheet(self.status_normal_style)
 
 
 class HLine(QFrame):

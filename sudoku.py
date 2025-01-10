@@ -349,110 +349,10 @@ class Sudoku:
         * Inferred line
     """
 
-    blank_puzzle = (
-        (
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        ),
-        (
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        ),
-        (
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        ),
-        (
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        ),
-        (
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        ),
-        (
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        ),
-        (
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        ),
-        (
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        ),
-        (
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-        ),
-    )
-
     def __init__(self) -> None:
-        self.init_val = self.blank_puzzle
+        self.init_val = None
+        self._initial_state = True
+        self._last_rule_progressed = False
         self.sudoku: list[NineSquare] = []
         for i in range(9):
             self.sudoku.append(NineSquare(i))
@@ -475,9 +375,13 @@ class Sudoku:
 
     def initialize(self) -> None:
         """Used to initialize state of the puzzle first time or to reset it for subsequent puzzles"""
-        for i in range(9):
-            self.sudoku[i].initialize(self.init_val[i])
-        logger.info("Sudoku Class finished initialization")
+        if not self.init_val:
+            logger.warning("initialize called without an init being loaded. Do nothing")
+        else:
+            for i in range(9):
+                self.sudoku[i].initialize(self.init_val[i])
+            logger.info("Sudoku Class finished initialization")
+        self._initial_state = True
 
     @property
     def solved(self) -> bool:
@@ -485,6 +389,15 @@ class Sudoku:
         for ns in self.sudoku:
             all_solved &= ns.solved
         return all_solved
+
+    @property
+    def last_rule_progressed(self) -> bool:
+        return self._last_rule_progressed
+
+    @property
+    def initial_state(self) -> bool:
+        """True if puzzle is still in the initial state and no rules run"""
+        return self._initial_state
 
     @property
     def solutions(self) -> SudokuVal:
@@ -499,12 +412,14 @@ class Sudoku:
         altered. Returns false if after trying all cells no new information
         is discovered"""
         logger.info("Sudoku Class starting elimination_to_one")
+        self._initial_state = False
         total_result = False
         for square in self.sudoku:
             total_result |= square.elimination_to_one_loop()
         logger.info(
             "Sudoku Class finishing elimination_to_one result is %d", total_result
         )
+        self._last_rule_progressed = total_result
         return total_result
 
     def single_possible_location(self) -> bool:
@@ -512,10 +427,12 @@ class Sudoku:
         cell. Returns true if a new solution is found"""
 
         logger.info("Sudoku Class starting single_possible_location")
+        self._initial_state = False
         total_result = False
         for square in self.sudoku:
             total_result |= square.single_possible_location()
         logger.info(
             "Sudoku Class finishing single_possible_location result is %d", total_result
         )
+        self._last_rule_progressed = total_result
         return total_result
