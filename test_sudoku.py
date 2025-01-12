@@ -63,7 +63,7 @@ def test_sudoku_elimination_to_one():
     )
     puzzle.load(init1)
     puzzle.initialize()
-    progress = puzzle.elimination_to_one()
+    progress = puzzle.run_rule("elimination_to_one")
     assert progress
     sols = puzzle.solutions
     # print("KHH")
@@ -88,10 +88,10 @@ def test_sudoku_single_possible_location():
     )
     puzzle.load(init1)
     puzzle.initialize()
-    progress = puzzle.elimination_to_one()
+    progress = puzzle.run_rule("elimination_to_one")
     assert progress
     assert puzzle.last_rule_progressed
-    progress = puzzle.single_possible_location()
+    progress = puzzle.run_rule("single_possible_location")
     assert progress
     assert puzzle.last_rule_progressed
     sols = puzzle.solutions
@@ -117,11 +117,11 @@ def test_sudoku_simple_solved_after_multiple_calls():
     progress = True
     assert not puzzle.solved
     while progress:
-        progress = puzzle.elimination_to_one()
+        progress = puzzle.run_rule("elimination_to_one")
     progress = True
     assert not puzzle.solved
     while progress:
-        progress = puzzle.single_possible_location()
+        progress = puzzle.run_rule("single_possible_location")
     assert puzzle.solved
     sols = puzzle.solutions
     assert sols == (
@@ -155,11 +155,81 @@ def test_sudoku_with_Daniel():
     puzzle.initialize()
     progress = True
     while progress:
-        progress = puzzle.elimination_to_one()
+        progress = puzzle.run_rule("elimination_to_one")
     print("After step 1")
     print(puzzle.solutions)
     progress = True
     while progress:
-        progress = puzzle.single_possible_location()
+        progress = puzzle.run_rule("single_possible_location")
     print("After step 2")
     print(puzzle.solutions)
+
+
+def test_sudoku_matched_pairs_single_pair():
+    """Sinlge matched pair. The other potentials should be eliminated"""
+    puzzle = Sudoku()
+    init1 = (
+        (None, None, None, 4, None, 5, None, 7, 8),
+        (1, 2, None, 6, 7, 8, None, None, None),
+        (None, None, None, 9, None, None, None, None, None),
+        (3, None, None, 5, None, None, 6, None, None),
+        (7, None, None, 8, None, None, 9, None, None),
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+    )
+    puzzle.load(init1)
+    puzzle.initialize()
+    progress = puzzle.run_rule("matched_pairs")
+    assert progress
+    pots = puzzle.sudoku[0].cell(1, 1).potentials
+    assert pots == {1, 2}
+
+
+def test_sudoku_matched_pairs_four_pairs():
+    """4 matched pairs"""
+    puzzle = Sudoku()
+    init1 = (
+        (None, None, 9, 6, 3, None, None, None, 4),
+        (7, 2, None, 5, None, None, 1, None, None),
+        (None, None, None, None, None, None, 5, None, None),
+        (7, 1, 5, 8, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, 8, None, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+    )
+    puzzle.load(init1)
+    puzzle.initialize()
+    progress = puzzle.run_rule("matched_pairs")
+    assert progress
+    pots = puzzle.sudoku[0].cell(1, 2).potentials
+    assert pots == {1, 7}
+    pots = puzzle.sudoku[0].cell(2, 0).potentials
+    assert pots == {2}
+
+
+def test_sudoku_matched_pairs_four_pairs_only_two_matched():
+    """4 pairs but only 2 are matched"""
+    puzzle = Sudoku()
+    init1 = (
+        (None, None, None, None, None, None, None, None, 4),
+        (2, 8, None, 1, 5, None, None, None, None),
+        (None, None, None, 8, None, None, 1, 5, None),
+        (7, None, 1, None, None, 5, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+        (None, 7, None, None, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+    )
+    puzzle.load(init1)
+    puzzle.initialize()
+    progress = puzzle.run_rule("matched_pairs")
+    assert progress
+    pots = puzzle.sudoku[0].cell(0, 0).potentials
+    assert pots == {1, 5}
+    pots = puzzle.sudoku[0].cell(0, 1).potentials
+    assert pots == {1, 5}

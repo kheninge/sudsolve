@@ -1,4 +1,5 @@
 import logging
+import itertools
 from typing import TypeAlias
 
 logger = logging.getLogger(__name__)
@@ -23,9 +24,7 @@ class Cell:
     * Pointer to the next cell in the row, column and nineSquare
     Methods:
     init() - takes an integer 0-9 or None. Copies to the initial and solved state
-    progress = elimination_to_one_loop() - loop through row, column and square loops and eliminate possibilities
-                         if the possibility is limited to one then set the solved field.
-                         returns true if new success is found or possibilities are improved
+    run_rule(rule) - Takes these
     *"""
 
     def __init__(self, id: int = 0, initial: CellVal = None) -> None:
@@ -37,6 +36,12 @@ class Cell:
             "row": None,
             "col": None,
             "square": None,
+        }
+        self.rules = {
+            "update_potentials": self._update_potentials,
+            "elimination_to_one": self._rule_elimination_to_one,
+            "single_possible_location": self._rule_single_possible_location,
+            "matched_pairs": self._rule_matched_pairs,
         }
         self.initialize(initial)
 
@@ -192,21 +197,55 @@ class Cell:
                     self.remove_potential(cell.solution)
                 cell = cell._next[direction]
 
+            if not self.potentials:
+                logger.error(
+                    "Something wrong with puzzle, potentials for cell %d is empty",
+                    self.id,
+                )
         if len(self._potentials) < potential_starting_len:
             logger.debug("Cell %d made progress on potentials", self.id)
             return True
         else:
             return False
 
-    def elimination_to_one_loop(self) -> bool:
-        """Eliminate all solutions seen in constrained spaces and if a single potential is left designate it
-        the solution"""
+    def _gather_multiples(self, mode: int, direction: str) -> set[int]:
+        """Traverse the space looking for mode number of occurences in potentials i.e. singles, pairs, triplets etc
+        Returns a set of those potentials"""
+        pot_count = dict.fromkeys(range(1, 10), 0)
+        pot_list = set()
+        cell = self
+        while True:
+            if cell is None:
+                raise Exception("Cell network is not set up correctly")
+            for num in cell.potentials:
+                pot_count[num] += 1
+            cell = cell._next[direction]
+            if cell == self:
+                break
+        # Analyze potential_count statistics to see if there are any unique (just one) potential
+        # If so then build a list of those numbers
+        for num, count in pot_count.items():
+            if count == mode:
+                pot_list.add(num)
+        return pot_list
+
+    def run_rule(self, rule: str) -> bool:
+        """Wrapper for running rules listed in rule"""
+        if rule not in self.rules.keys():
+            logger.error("In run_rule, %s rule is called but not defined", rule)
+            raise Exception("Undefine rule called")
+
         if self.solution:
             # Already solved
             return False
 
-        progress = False
         _ = self._update_potentials()
+        return self.rules[rule]()
+
+    def _rule_elimination_to_one(self) -> bool:
+        """Eliminate all solutions seen in constrained spaces and if a single potential is left designate it
+        the solution"""
+        progress = False
         if len(self._potentials) == 1:
             # Solved
             mysolution = self._potentials.pop()
@@ -215,42 +254,58 @@ class Cell:
 
         return progress
 
-    def single_possible_location(self) -> bool:
+    def _rule_single_possible_location(self) -> bool:
         """Look through potentials determined by other rules. If a potential number is only present within this cell
         for a given constrained space, then that is the solution"""
 
-        if self.solution:
-            # Already solved
-            return False
-
-        _ = self._update_potentials()
         # Iterate over row, col and square.
         for direction in self._next:
-            # First pass, gather statistics on potential counts in pot_count
-            pot_count = dict.fromkeys(range(1, 10), 0)
-            pot_list = set()
-            # First examine yourself
-            for num in self.potentials:
-                pot_count[num] += 1
-            # Then look at others in the network
-            cell = self._next[direction]
-            while cell != self:  # stop when you get to the end of the loop
-                if cell is None:
-                    raise Exception("Cell network is not set up correctly")
-                for num in cell.potentials:
-                    pot_count[num] += 1
-                cell = cell._next[direction]
-            # Analyze potential_count statistics to see if there are any unique (just one) potential
-            # If so then build a list of those numbers
-            for num, count in pot_count.items():
-                if count == 1:
-                    pot_list.add(num)
+            singles_set = self._gather_multiples(1, direction)
             # Now see if any of our cell potentials is in the list, if so set it as the solution
             for num in self.potentials:
-                if num in pot_list:
+                if num in singles_set:
                     self._set_solution(num)
                     return True  # short circuit if solution found
         return False
+
+    def _rule_matched_pairs(self) -> bool:
+        total_return = False
+
+        for direction in self._next:
+            logger.debug("In rule_matched_pairs, direction is %s", direction)
+            pairs_set = self._gather_multiples(2, direction)
+            total_num_pairs = len(pairs_set)
+            # 2 is the minimum that can match
+            if total_num_pairs < 2:
+                continue
+            # Check to see if subset number of pairs only shows up in that number of  cells. If so then they are "matched"
+            # e.g. 2 pairs that only potentially exist in 2 cells or 3 pairs that only potentially exist in 3 cells
+            for subset_num_pairs in range(2, total_num_pairs + 1):
+                # For every number of pairs from 2 to number of pairs found pick a combination of N choose n
+                combinations = itertools.combinations(pairs_set, subset_num_pairs)
+                for combo in combinations:
+                    matching_cells = []
+                    # TODO this traversal of the c space has to be generalized into a function of some sort
+                    cell = self
+                    while True:
+                        if cell is None:
+                            raise Exception("Cell network is not set up correctly")
+                        if cell.potentials.intersection(combo):
+                            matching_cells.append(cell)
+                        cell = cell._next[direction]
+                        if cell == self:
+                            break
+                    if len(matching_cells) == subset_num_pairs:
+                        # We have found a set of matched pairs, now go through each cell and eliminate any potential
+                        # that is not part of the matched pair combination
+                        for c in matching_cells:
+                            current_pots = c.potentials.copy()
+                            for p in current_pots:
+                                if p not in combo:
+                                    c.remove_potential(p)
+                                    # success! we actually removed a potential
+                                    total_return |= True
+        return total_return
 
 
 class NineSquare:
@@ -329,26 +384,16 @@ class NineSquare:
             total_result &= self.ns[i].check_consistency()
         return total_result
 
-    def elimination_to_one_loop(self) -> bool:
-        logger.debug("NineSquare %d starting elimination_to_one_loop", self.id)
+    def run_rule(self, rule: str) -> bool:
+        """Wrapper to send the generic rule to each of the cells"""
+        logger.info("NineSquare %d starting rule %s", self.id, rule)
         total_result = False
         for i in range(9):
-            total_result |= self.ns[i].elimination_to_one_loop()
+            total_result |= self.ns[i].run_rule(rule)
         logger.debug(
-            "NineSquare %d completing elimination_to_one_loop, result is ",
+            "NineSquare %d completing %s, result is %d",
             self.id,
-            total_result,
-        )
-        return total_result
-
-    def single_possible_location(self) -> bool:
-        logger.debug("NineSquare %d starting single_possible_location", self.id)
-        total_result = False
-        for i in range(9):
-            total_result |= self.ns[i].single_possible_location()
-        logger.debug(
-            "NineSquare %d completing single_possible_location, result is ",
-            self.id,
+            rule,
             total_result,
         )
         return total_result
@@ -439,37 +484,29 @@ class Sudoku:
             total_result &= self.sudoku[i].check_consistency()
         return total_result
 
-    def elimination_to_one(self) -> bool:
-        """Run the elimination to one algorithm for each non-solved
-        cell. Returns true if a new solution is found or if a possibility is
-        altered. Returns false if after trying all cells no new information
-        is discovered"""
-        logger.info("Sudoku Class starting elimination_to_one")
-        self._initial_state = False
+    def update_all_potentials(self) -> bool:
         total_result = False
         for square in self.sudoku:
-            total_result |= square.elimination_to_one_loop()
+            total_result |= square.run_rule("update_potentials")
+        logger.info(
+            "Sudoku Class finishing elimination_to_one result is %d", total_result
+        )
+        if not self.check_consistency():
+            raise Exception("update_all_potentials failed check_consistency")
+        return total_result
+
+    def run_rule(self, rule: str) -> bool:
+        """Wrapper to send the generic rule to each of the NineSquares"""
+        logger.info("Sudoku Class starting rule %s", rule)
+        self._initial_state = False
+        total_result = False
+        _ = self.update_all_potentials()  # Do this for all cells before any rule runs
+        for square in self.sudoku:
+            total_result |= square.run_rule(rule)
         logger.info(
             "Sudoku Class finishing elimination_to_one result is %d", total_result
         )
         self._last_rule_progressed = total_result
         if not self.check_consistency():
-            raise Exception("elimination_to_one failed check_consistency")
-        return total_result
-
-    def single_possible_location(self) -> bool:
-        """Run the single possible location algorithm for each non-solved
-        cell. Returns true if a new solution is found"""
-
-        logger.info("Sudoku Class starting single_possible_location")
-        self._initial_state = False
-        total_result = False
-        for square in self.sudoku:
-            total_result |= square.single_possible_location()
-        logger.info(
-            "Sudoku Class finishing single_possible_location result is %d", total_result
-        )
-        self._last_rule_progressed = total_result
-        if not self.check_consistency():
-            raise Exception("single_possible_location failed check_consistency")
+            raise Exception("%s failed check_consistency", rule)
         return total_result

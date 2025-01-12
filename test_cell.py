@@ -146,15 +146,25 @@ def test_cell_elimination_to_one_loop_solution_not_found():
     r2c1.snext = r2c2
     r2c2.snext = r0c0
 
-    progress = r1c1.elimination_to_one_loop()
+    progress = r1c1.run_rule("elimination_to_one")
     assert r1c1.check_consistency()  # should pass
     assert not progress
     assert r1c1.potentials == {3, 5, 8, 9}
     assert r1c1.solution is None
     assert r1c1.initial is None
-    progress = r1c1.elimination_to_one_loop()
+    progress = r1c1.run_rule("elimination_to_one")
     # second time through potentials should not change
     assert not progress
+
+    ## Test count_multiples using exiting test setup TODO could set up a fixture
+    singles = r1c1._gather_multiples(1, "square")
+    assert len(singles) == 0
+    quads = r1c1._gather_multiples(4, "square")
+    assert quads == {3, 5, 8, 9}
+    assert len(quads) == 4
+    singles = r1c1._gather_multiples(1, "row")
+    assert len(singles) == 4
+    assert singles == {3, 5, 8, 9}
 
 
 def test_cell_elimination_to_one_loop_solution_is_found():
@@ -205,7 +215,7 @@ def test_cell_elimination_to_one_loop_solution_is_found():
     r2c1.snext = r2c2
     r2c2.snext = r0c0
 
-    progress = r1c1.elimination_to_one_loop()
+    progress = r1c1.run_rule("elimination_to_one")
     assert progress
     assert not r1c1.potentials
     assert r1c1.solution == 9
@@ -231,6 +241,6 @@ def test_cell_single_possible_location():
     col_partner.cnext = my_cell
     square_partner.snext = my_cell
 
-    result = my_cell.single_possible_location()
+    result = my_cell.run_rule("single_possible_location")
     assert result
     assert my_cell.solution == 3

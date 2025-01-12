@@ -17,6 +17,7 @@ from sudoku import NineSquareVal, Sudoku, SudokuVal
 
 # TODO:
 # * Color squares with changes
+# * Create a log with sudsovler.py
 # * Swap out a label with hints in the appropriate spots (3x3)
 # * hot keys for the Buttons
 # * code remaining rules
@@ -68,10 +69,13 @@ class SSolveMain(QMainWindow):
         )
         # Rules Buttons Connect Up
         self.control_widget.rules["eto_rule"].clicked.connect(
-            self.sudoku.elimination_to_one
+            lambda: self.sudoku.run_rule("elimination_to_one")
         )
         self.control_widget.rules["spl_rule"].clicked.connect(
-            self.sudoku.single_possible_location
+            lambda: self.sudoku.run_rule("single_possible_location")
+        )
+        self.control_widget.rules["matched_pairs"].clicked.connect(
+            lambda: self.sudoku.run_rule("matched_pairs")
         )
         # Update cells on every button press
         for it in self.control_widget.rules.values():
@@ -85,9 +89,13 @@ class SSolveMain(QMainWindow):
         shortcut_restart = QShortcut(QKeySequence("r"), self)
         shortcut_restart.activated.connect(self.sudoku.initialize)
         shortcut_eto = QShortcut(QKeySequence("1"), self)
-        shortcut_eto.activated.connect(self.sudoku.elimination_to_one)
+        shortcut_eto.activated.connect(
+            lambda: self.sudoku.run_rule("elimination_to_one")
+        )
         shortcut_spl = QShortcut(QKeySequence("2"), self)
-        shortcut_spl.activated.connect(self.sudoku.single_possible_location)
+        shortcut_spl.activated.connect(
+            lambda: self.sudoku.run_rule("single_possible_location")
+        )
 
     def update_gui(self) -> None:
         data = self.sudoku.solutions

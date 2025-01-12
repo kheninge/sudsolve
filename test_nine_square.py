@@ -42,10 +42,10 @@ def test_nine_square_init_connect_eliminate():
     n10.initialize((2, None, None, None, None, None, None, 6, None))
     n11.initialize((None, 1, None, 5, None, None, None, None, 9))
 
-    result1 = n00.elimination_to_one_loop()
-    result2 = n01.elimination_to_one_loop()
-    result3 = n10.elimination_to_one_loop()
-    result4 = n11.elimination_to_one_loop()
+    result1 = n00.run_rule("elimination_to_one")
+    result2 = n01.run_rule("elimination_to_one")
+    result3 = n10.run_rule("elimination_to_one")
+    result4 = n11.run_rule("elimination_to_one")
 
     solution00 = n00.solutions
     solution11 = n11.solutions
