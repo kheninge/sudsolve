@@ -5,9 +5,9 @@ from typing import TypeAlias
 logger = logging.getLogger(__name__)
 
 ## Define some types
-CellVal: TypeAlias = int | None
-NineSquareVal: TypeAlias = tuple[CellVal, ...]
-SudokuVal: TypeAlias = tuple[NineSquareVal, ...]
+CellValType: TypeAlias = int | None
+NineSquareValType: TypeAlias = tuple[CellValType, ...]
+SudokuValType: TypeAlias = tuple[NineSquareValType, ...]
 
 
 # TODO:
@@ -27,10 +27,11 @@ class Cell:
     run_rule(rule) - Takes these
     *"""
 
-    def __init__(self, id: int = 0, initial: CellVal = None) -> None:
+    def __init__(self, id: int = 0, initial: CellValType = None) -> None:
         self.id: int = id
-        self._check_input_values(initial)
-        self._solved_value: CellVal = None
+        self._check_cell_is_legal(initial)
+        self._solved_value: CellValType = None
+        self._new_solution: bool = False
         self._potentials: set[int] = set(range(1, 10))
         self._next: dict[str, "None | Cell"] = {
             "row": None,
@@ -45,24 +46,24 @@ class Cell:
         }
         self.initialize(initial)
 
-    def _check_input_values(self, val: CellVal) -> None:
+    def _check_cell_is_legal(self, val: CellValType) -> None:
         """cell can be initialized to a digit 1 - 9 or to None
         val is either a single int or a set of ints"""
-
         if val is not None:
             if type(val) is not int:
                 raise ValueError
             if val < 1 or val > 9:
                 raise ValueError
+        logger.debug("Cell Value for cell id %d is legal", self.id)
 
-    def _check_network(self) -> bool:
-        """Check to make sure everything is connected properly, make sure no endless loops
-        on network traversals. Only call this function once"""
+    def _check_network_connection(self) -> bool:
+        """Check to make sure everything is connected properly for this cell; make sure no endless loops
+        on network traversals."""
         # Iterate over row, col and square.
         for direction in self._next:
-            cell = self._next[direction]
-            count = 1
-            while cell != self:
+            cell = self
+            count = 0
+            while True:
                 if cell is None:
                     raise Exception("Cell network is not set up correctly")
                 cell = cell._next[direction]
@@ -75,15 +76,24 @@ class Cell:
                         direction,
                     )
                     raise Exception("Elimination_to_one has an infinite loop")
+                if cell == self:
+                    break
         return True
 
     @property
     def connection_ok(self) -> bool:
-        return self._check_network()
+        return self._check_network_connection()
 
     @property
     def solved(self) -> bool:
         return self.solution is not None
+
+    @property
+    def new_solution(self) -> bool:
+        return self._new_solution
+
+    def clear_new_solution(self) -> None:
+        self._new_solution = False
 
     @property
     def rnext(self) -> "Cell | None":
@@ -110,11 +120,11 @@ class Cell:
         self._next["square"] = pointer
 
     @property
-    def solution(self) -> CellVal:
+    def solution(self) -> CellValType:
         return self._solved_value
 
     @property
-    def initial(self) -> CellVal:
+    def initial(self) -> CellValType:
         return self._initial_value
 
     @property
@@ -125,11 +135,11 @@ class Cell:
         self._potentials.clear()
 
     def add_potential(self, val: int) -> None:
-        self._check_input_values(val)
+        self._check_cell_is_legal(val)
         self._potentials.add(val)
 
     def remove_potential(self, val: int) -> None:
-        self._check_input_values(val)
+        self._check_cell_is_legal(val)
         if val in self._potentials:
             self._potentials.remove(val)
 
@@ -157,9 +167,13 @@ class Cell:
     def _set_solution(self, val: int) -> None:
         """Set the solution field. Clear the potentials field. Go through all visible c-spaces and remove solved value from their potentials"""
         self._solved_value = val
+        self._new_solution = True
         self.clear_potentials()
         logger.info("Cell %d: Solution found: %d", self.id, self._solved_value)
         # For all visibile c spaces, remove solved value from potentials
+        self._remove_potential_in_cspaces(val)
+
+    def _remove_potential_in_cspaces(self, val: int) -> None:
         for direction in self._next:
             cell = self._next[direction]
             while cell != self:
@@ -168,10 +182,10 @@ class Cell:
                 cell.remove_potential(val)
                 cell = cell._next[direction]
 
-    def initialize(self, val: CellVal) -> None:
+    def initialize(self, val: CellValType) -> None:
         """cell can be initialized to a digit 1 - 9 or to None"""
         logger.debug("Init is called for Cell %d", self.id)
-        self._check_input_values(val)
+        self._check_cell_is_legal(val)
         if val is not None:
             self._initial_value = val
             # Can't  just call _set_solution here as network isn't guarenteed to be set up yet
@@ -231,6 +245,7 @@ class Cell:
 
     def run_rule(self, rule: str) -> bool:
         """Wrapper for running rules listed in rule"""
+        self.clear_new_solution()
         if rule not in self.rules.keys():
             logger.error("In run_rule, %s rule is called but not defined", rule)
             raise Exception("Undefine rule called")
@@ -343,7 +358,7 @@ class NineSquare:
             self.ns[i].snext = self.ns[i + 1]
         self.ns[8].snext = self.ns[0]
 
-    def initialize(self, vals: NineSquareVal) -> None:
+    def initialize(self, vals: NineSquareValType) -> None:
         for i in range(9):
             self.ns[i].initialize(vals[i])
 
@@ -355,7 +370,7 @@ class NineSquare:
         return all_solved
 
     @property
-    def solutions(self) -> NineSquareVal:
+    def solutions(self) -> NineSquareValType:
         sols = []
         for i in range(9):
             sols.append(self.ns[i].solution)
@@ -440,9 +455,11 @@ class Sudoku:
             self.sudoku[i + 6].attach_col(self.sudoku[i])
         # Run a quick check of the completed sudoku network from the cell perspective
         # if it fails it will trigger an exception, so the answer isn't really needed.
+        # TODO this is wrong. it only runs network from 1 cell perspective. Also it means Sudoku has to understand
+        # cell methods??
         _ = self.sudoku[0].cell(0, 0).connection_ok
 
-    def load(self, init_val: SudokuVal):
+    def load(self, init_val: SudokuValType):
         self.init_val = init_val
 
     def initialize(self) -> None:
@@ -472,12 +489,15 @@ class Sudoku:
         return self._initial_state
 
     @property
-    def solutions(self) -> SudokuVal:
+    def solutions(self) -> SudokuValType:
         sols = []
         for i in range(9):
             sols.append(self.sudoku[i].solutions)
         return tuple(sols)
 
+    # TODO The following functions all do the same thing. Traverse the ninesquares calling this same function at that
+    # level. There has to be a way to collapse into one. The problem being run_rule needs to call update_potentials
+    # and consistency_check as a part of that algorithm. Needs some thought
     def check_consistency(self) -> bool:
         total_result = True
         for i in range(9):

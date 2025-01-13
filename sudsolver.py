@@ -21,7 +21,7 @@ def main():
     app.exec()
 
 
-def convert_to_ns_format(puzzles: dict) -> dict[str, sudoku.SudokuVal]:
+def convert_to_ns_format(puzzles: dict) -> dict[str, sudoku.SudokuValType]:
     ret_val = {}
     for title, puzzle in puzzles.items():
         ns_list = []  # list of nine nineSquares

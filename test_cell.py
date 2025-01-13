@@ -151,6 +151,7 @@ def test_cell_elimination_to_one_loop_solution_not_found():
     assert not progress
     assert r1c1.potentials == {3, 5, 8, 9}
     assert r1c1.solution is None
+    assert r1c1.new_solution is False
     assert r1c1.initial is None
     progress = r1c1.run_rule("elimination_to_one")
     # second time through potentials should not change
@@ -219,7 +220,10 @@ def test_cell_elimination_to_one_loop_solution_is_found():
     assert progress
     assert not r1c1.potentials
     assert r1c1.solution == 9
+    assert r1c1.new_solution
     assert r1c1.initial is None
+    progress = r1c1.run_rule("elimination_to_one")
+    assert not r1c1.new_solution
 
 
 def test_cell_single_possible_location():
@@ -244,3 +248,4 @@ def test_cell_single_possible_location():
     result = my_cell.run_rule("single_possible_location")
     assert result
     assert my_cell.solution == 3
+    assert my_cell.new_solution

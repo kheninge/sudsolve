@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QShortcut, QKeySequence
-from sudoku import NineSquareVal, Sudoku, SudokuVal
+from sudoku import NineSquareValType, Sudoku, SudokuValType
 
 
 # TODO:
@@ -29,13 +29,13 @@ from sudoku import NineSquareVal, Sudoku, SudokuVal
 
 class SSolveMain(QMainWindow):
     def __init__(
-        self, app: QApplication, sudoku: Sudoku, puzzle_dict: dict[str, SudokuVal]
+        self, app: QApplication, sudoku: Sudoku, puzzles_dict: dict[str, SudokuValType]
     ) -> None:
         super().__init__()
 
         self.app = app
         self.sudoku = sudoku
-        self.puzzle_dict = puzzle_dict
+        self.puzzle_dict = puzzles_dict
         self._status: str | None = None
 
         self.setWindowTitle("Kurt's Suduko Logical Rule Solver")
@@ -52,7 +52,7 @@ class SSolveMain(QMainWindow):
         puzzle_widget.setLayout(layout)
 
         # Control Widget Added to Bottom
-        self.control_widget = ControlButtons(puzzle_dict)
+        self.control_widget = ControlButtons(puzzles_dict)
         main_layout = QVBoxLayout()
         main_layout.addWidget(puzzle_widget)
         main_layout.addWidget(self.control_widget)
@@ -137,7 +137,7 @@ class NineSquareView(QWidget):
                 layout.addWidget(cell_widget, i, j)
         self.setLayout(layout)
 
-    def update_cells(self, data: NineSquareVal):
+    def update_cells(self, data: NineSquareValType):
         for i, cell in enumerate(self.cells):
             val = ""
             if data[i]:
@@ -153,7 +153,7 @@ class ControlButtons(QWidget):
     status_normal_style = "font-size: 16pt;"
     status_success_style = "color: green; font-size: 16pt;"
 
-    def __init__(self, puzzle_dict: dict[str, SudokuVal]) -> None:
+    def __init__(self, puzzle_dict: dict[str, SudokuValType]) -> None:
         super().__init__()
 
         # Control Buttons
