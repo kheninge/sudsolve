@@ -137,6 +137,44 @@ def test_sudoku_simple_solved_after_multiple_calls():
     )
 
 
+def test_sudoku_simple_solved_replay():
+    """Using the same map as above. Run elimination to one twice. Then single possible location"""
+    puzzle = Sudoku()
+    init1 = (
+        (2, None, None, 5, 7, None, None, 1, None),
+        (None, 7, None, None, None, 4, None, None, 6),
+        (None, 8, 6, None, None, None, None, 4, 3),
+        (None, None, None, None, None, 1, 8, None, None),
+        (None, 6, 9, None, None, None, 1, 3, None),
+        (None, None, 7, 3, None, None, None, None, None),
+        (3, 9, None, None, None, None, 1, 8, None),
+        (7, None, None, 4, None, None, None, 9, None),
+        (None, 1, None, None, 7, 9, None, None, 4),
+    )
+    puzzle.load(init1)
+    assert not puzzle.solved
+    puzzle.initialize()
+    progress = puzzle.run_rule("elimination_to_one")
+    assert progress
+    chkpnt1 = puzzle.solutions
+    progress = puzzle.run_rule("elimination_to_one")
+    chkpnt2 = puzzle.solutions
+    progress = puzzle.run_rule("single_possible_location")
+    chkpnt3 = puzzle.solutions
+    progress = puzzle.replay_history("back")
+    assert puzzle.solutions == chkpnt2
+    progress = puzzle.replay_history("back")
+    assert puzzle.solutions == chkpnt1
+    progress = puzzle.replay_history("back")
+    assert puzzle.solutions == init1
+    progress = puzzle.replay_history("forward")
+    assert puzzle.solutions == chkpnt1
+    progress = puzzle.replay_history("forward")
+    assert puzzle.solutions == chkpnt2
+    progress = puzzle.replay_history("forward")
+    assert puzzle.solutions == chkpnt3
+
+
 def test_sudoku_with_Daniel():
     """Using the same map as above. Run elimination to one twice. Then single possible location"""
     puzzle = Sudoku()

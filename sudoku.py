@@ -441,6 +441,7 @@ class Sudoku:
         self.init_val = None
         self._initial_state = True
         self._last_rule_progressed = False
+        self.history = History()
         self.sudoku: list[NineSquare] = []
         for i in range(9):
             self.sudoku.append(NineSquare(i))
@@ -463,11 +464,13 @@ class Sudoku:
     def load(self, init_val: SudokuValType):
         self.init_val = init_val
 
-    def initialize(self) -> None:
+    def initialize(self, history_mode=False) -> None:
         """Used to initialize state of the puzzle first time or to reset it for subsequent puzzles"""
         if not self.init_val:
             logger.warning("initialize called without an init being loaded. Do nothing")
         else:
+            if not history_mode:
+                self.history.clear()
             for i in range(9):
                 self.sudoku[i].initialize(self.init_val[i])
             logger.info("Sudoku Class finished initialization")
@@ -516,11 +519,13 @@ class Sudoku:
             raise Exception("update_all_potentials failed check_consistency")
         return total_result
 
-    def run_rule(self, rule: str) -> bool:
+    def run_rule(self, rule: str, history_mode=False) -> bool:
         """Wrapper to send the generic rule to each of the NineSquares"""
         logger.info("Sudoku Class starting rule %s", rule)
         self._initial_state = False
         total_result = False
+        if not history_mode:
+            self.history.push_rule(rule)
         _ = self.update_all_potentials()  # Do this for all cells before any rule runs
         for square in self.sudoku:
             total_result |= square.run_rule(rule)
@@ -531,3 +536,51 @@ class Sudoku:
         if not self.check_consistency():
             raise Exception("%s failed check_consistency", rule)
         return total_result
+
+    def replay_history(self, direction: str) -> bool:
+        if direction == "back":
+            if self.history.curr_ptr == -1:
+                # Already at earliest point, do nothing
+                pass
+            else:
+                self.history.curr_ptr -= 1
+        elif direction == "forward":
+            if self.history.curr_ptr == self.history.tail_ptr:
+                # Already at latest point, do nothing
+                pass
+            else:
+                self.history.curr_ptr += 1
+        else:
+            raise Exception("Invalid Argument")
+        self.initialize(history_mode=True)
+        progress = False
+        i = 0
+        while i <= self.history.curr_ptr:
+            progress = self.run_rule(self.history.rule_queue[i], history_mode=True)
+            i += 1
+        return progress
+
+
+class History:
+    def __init__(self) -> None:
+        self.rule_queue = []
+        self.tail_ptr = -1
+        self.curr_ptr = -1
+
+    def push_rule(self, rule: str) -> None:
+        self.rule_queue.append(rule)
+        self.tail_ptr += 1
+        self.curr_ptr = self.tail_ptr
+
+    def clear(self) -> None:
+        self.rule_queue = []
+        self.tail_ptr = -1
+        self.curr_ptr = self.tail_ptr
+
+    @property
+    def init_val(self) -> SudokuValType:
+        return self._init
+
+    @init_val.setter
+    def init_val(self, val: SudokuValType) -> None:
+        self._init = val

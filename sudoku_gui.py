@@ -12,13 +12,12 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QShortcut, QKeySequence
-from sudoku import NineSquareValType, Sudoku, SudokuValType, Cell
+from sudoku import Sudoku, SudokuValType, Cell
 
 
 # TODO:
 # * Create a log with sudsovler.py
 # * Swap out a label with hints in the appropriate spots (3x3)
-# * hot keys for the Buttons
 # * code remaining rules
 # * scripting language to save order of button pushes (stretch)
 # * puzzle editing mode instead of having to edit the yaml file directly (stretch)
@@ -34,13 +33,14 @@ class SSolveMain(QMainWindow):
 
         self.app = app
         self.sudoku = sudoku
-        self._status: str | None = None
         self.puzzle_widget = SudokuView(sudoku)
         self.control_widget = ControlsView(sudoku, self, puzzles_dict)
 
-        self.setWindowTitle("Kurt's Suduko Logical Rule Solver")
+        self._define_layout()
+        self._configure_mainwindow()
+        self._define_shortcuts()
 
-        # Main Window Layout
+    def _define_layout(self) -> None:
         main_layout = QVBoxLayout()
         main_layout.addWidget(self.puzzle_widget)
         main_layout.addWidget(self.control_widget)
@@ -48,7 +48,10 @@ class SSolveMain(QMainWindow):
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)
 
-        # Shortcut Definitions
+    def _configure_mainwindow(self) -> None:
+        self.setWindowTitle("Kurt's Suduko Logical Rule Solver")
+
+    def _define_shortcuts(self) -> None:
         shortcut_quit = QShortcut(QKeySequence("q"), self)
         shortcut_quit.activated.connect(self.app.quit)
         shortcut_exit = QShortcut(QKeySequence("x"), self)
