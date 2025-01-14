@@ -16,7 +16,6 @@ from sudoku import NineSquareValType, Sudoku, SudokuValType, Cell
 
 
 # TODO:
-# * Color squares with changes
 # * Create a log with sudsovler.py
 # * Swap out a label with hints in the appropriate spots (3x3)
 # * hot keys for the Buttons
@@ -55,14 +54,14 @@ class SSolveMain(QMainWindow):
         shortcut_exit = QShortcut(QKeySequence("x"), self)
         shortcut_exit.activated.connect(self.app.quit)
         shortcut_restart = QShortcut(QKeySequence("r"), self)
-        shortcut_restart.activated.connect(self.sudoku.initialize)
+        shortcut_restart.activated.connect(self.control_widget.initialize)
         shortcut_eto = QShortcut(QKeySequence("1"), self)
         shortcut_eto.activated.connect(
-            lambda: self.sudoku.run_rule("elimination_to_one")
+            lambda: self.control_widget.run_rule("elimination_to_one")
         )
         shortcut_spl = QShortcut(QKeySequence("2"), self)
         shortcut_spl.activated.connect(
-            lambda: self.sudoku.run_rule("single_possible_location")
+            lambda: self.control_widget.run_rule("single_possible_location")
         )
 
     def update_gui(self) -> None:
@@ -164,11 +163,11 @@ class ControlsView(QWidget):
         for foo in self.controls:
             self.controls[foo].setFixedSize(self.control_width, self.control_height)
         self.rules = {
-            "eto_rule": QPushButton("Elimination to One"),
-            "spl_rule": QPushButton("Single Possible Location"),
-            "aligned_rule": QPushButton("Aligned Potentials"),
-            "matched_pairs": QPushButton("Matched Pairs"),
-            "matched_triplets": QPushButton("Matched Triplets"),
+            "eto_rule": QPushButton("Elimination to One (1)"),
+            "spl_rule": QPushButton("Single Possible Location (2)"),
+            "aligned_rule": QPushButton("Aligned Potentials (3)"),
+            "matched_pairs": QPushButton("Matched Pairs (4)"),
+            "matched_triplets": QPushButton("Matched Triplets (5)"),
         }
         # Size the buttons
         for it in self.rules:
@@ -204,35 +203,19 @@ class ControlsView(QWidget):
 
         ## Connect Up Controls and Rules Buttons
         self.controls["close"].clicked.connect(self.main.app.quit)
-        self.controls["start"].clicked.connect(self._initialize)
-        self.controls["new_puzzle"].textActivated.connect(self._load_puzzle)
+        self.controls["start"].clicked.connect(self.initialize)
+        self.controls["new_puzzle"].textActivated.connect(self.load_puzzle)
         self.rules["eto_rule"].clicked.connect(
-            lambda: self.sudoku.run_rule("elimination_to_one")
+            lambda: self.run_rule("elimination_to_one")
         )
         self.rules["spl_rule"].clicked.connect(
-            lambda: self.sudoku.run_rule("single_possible_location")
+            lambda: self.run_rule("single_possible_location")
         )
         self.rules["matched_pairs"].clicked.connect(
-            lambda: self.sudoku.run_rule("matched_pairs")
+            lambda: self.run_rule("matched_pairs")
         )
-        ## Update gui on every rule button press
-        for it in self.rules.values():
-            # TODO How do we guarentee that the order will always be rule run followed by update?
-            it.clicked.connect(self.main.update_gui)
 
     def update_controls(self) -> None:
-        self._update_status()
-
-    def _initialize(self) -> None:
-        self.sudoku.initialize()
-        self.main.update_gui()
-
-    def _load_puzzle(self, t: str) -> None:
-        self.sudoku.load(self.puzzles_dict[t])
-        self.sudoku.initialize()
-        self.main.update_gui()
-
-    def _update_status(self) -> None:
         if self.sudoku.initial_state:
             status = "Initial"
         elif self.sudoku.solved:
@@ -247,6 +230,19 @@ class ControlsView(QWidget):
             self.status_label.setStyleSheet(self.status_success_style)
         else:
             self.status_label.setStyleSheet(self.status_normal_style)
+
+    def initialize(self) -> None:
+        self.sudoku.initialize()
+        self.main.update_gui()
+
+    def load_puzzle(self, t: str) -> None:
+        self.sudoku.load(self.puzzles_dict[t])
+        self.sudoku.initialize()
+        self.main.update_gui()
+
+    def run_rule(self, rule: str) -> None:
+        self.sudoku.run_rule(rule)
+        self.main.update_gui()
 
 
 class HLine(QFrame):

@@ -195,6 +195,7 @@ class Cell:
             self._initial_value = None
             self._solved_value = None
             self._potentials = set(range(1, 10))
+        self.clear_new_solution()
 
     def _update_potentials(self) -> bool:
         """Loop through all cstates and remove potentials from the list for any present
