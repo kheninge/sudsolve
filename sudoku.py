@@ -539,17 +539,17 @@ class Sudoku:
 
     def replay_history(self, direction: str) -> bool:
         if direction == "back":
-            if self.history.curr_ptr == -1:
+            if self.history.at_beginning:
                 # Already at earliest point, do nothing
                 pass
             else:
-                self.history.curr_ptr -= 1
+                self.history.back()
         elif direction == "forward":
-            if self.history.curr_ptr == self.history.tail_ptr:
+            if self.history.at_end:
                 # Already at latest point, do nothing
                 pass
             else:
-                self.history.curr_ptr += 1
+                self.history.forward()
         else:
             raise Exception("Invalid Argument")
         self.initialize(history_mode=True)
@@ -568,14 +568,27 @@ class History:
         self.curr_ptr = -1
 
     def push_rule(self, rule: str) -> None:
-        self.rule_queue.append(rule)
+        self.rule_queue.insert(self.curr_ptr + 1, rule)
         self.tail_ptr += 1
-        self.curr_ptr = self.tail_ptr
+        self.curr_ptr += 1
 
     def clear(self) -> None:
         self.rule_queue = []
-        self.tail_ptr = -1
-        self.curr_ptr = self.tail_ptr
+        self.tail_ptr = self.curr_ptr = -1
+
+    def back(self) -> None:
+        self.curr_ptr -= 1
+
+    def forward(self) -> None:
+        self.curr_ptr += 1
+
+    @property
+    def at_end(self) -> bool:
+        return self.tail_ptr == self.curr_ptr
+
+    @property
+    def at_beginning(self) -> bool:
+        return self.curr_ptr == -1
 
     @property
     def init_val(self) -> SudokuValType:

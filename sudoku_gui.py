@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
+    QDockWidget,
     QGridLayout,
     QMainWindow,
     QPushButton,
@@ -10,7 +11,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QFrame,
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QPropertyAnimation, Qt, QRect
 from PySide6.QtGui import QShortcut, QKeySequence
 from sudoku import Sudoku, SudokuValType, Cell
 
@@ -34,6 +35,7 @@ class SSolveMain(QMainWindow):
         self.app = app
         self.sudoku = sudoku
         self.puzzle_widget = SudokuView(sudoku)
+        self.right_docker = RightDocker(sudoku, self)
         self.control_widget = ControlsView(sudoku, self, puzzles_dict)
 
         self._define_layout()
@@ -47,6 +49,7 @@ class SSolveMain(QMainWindow):
         main_widget = QWidget()
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.right_docker)
 
     def _configure_mainwindow(self) -> None:
         self.setWindowTitle("Kurt's Suduko Logical Rule Solver")
@@ -66,6 +69,15 @@ class SSolveMain(QMainWindow):
         shortcut_spl.activated.connect(
             lambda: self.control_widget.run_rule("single_possible_location")
         )
+        shortcut_hist_show = QShortcut(QKeySequence("d"), self)
+        shortcut_hist_show.activated.connect(self.right_docker.toggle)
+
+        shortcut_hist_forward = QShortcut(QKeySequence("l"), self)
+        shortcut_hist_forward.activated.connect(
+            self.right_docker.history_widget.forward
+        )
+        shortcut_hist_back = QShortcut(QKeySequence("h"), self)
+        shortcut_hist_back.activated.connect(self.right_docker.history_widget.back)
 
     def update_gui(self) -> None:
         """The gui gets updated explicitly. This is the function that updates the entire gui. It should be called
@@ -120,7 +132,7 @@ class CellWidget(QLabel):
         super().__init__()
         self.setStyleSheet(self.style_normal_background)
         self.setFixedSize(75, 75)
-        self.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        self.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
 
     def update_cell(self, cell_model: Cell):
         if cell_model.solved:
@@ -159,6 +171,7 @@ class ControlsView(QWidget):
             "new_puzzle": QComboBox(),
             "start": QPushButton("Re-Start (r)"),
             "close": QPushButton("Exit (q)"),
+            "history": QPushButton("History (d)"),
         }
         self.controls["new_puzzle"].setPlaceholderText("Choose a Puzzle")
         self.controls["new_puzzle"].addItems(puzzles_dict.keys())
@@ -179,13 +192,17 @@ class ControlsView(QWidget):
         # Header and Control Labels
         header_label = QLabel("Logic Solution Rules")
         header_label.setStyleSheet("font-weight: bold; font-size: 12pt;")
-        header_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        header_label.setAlignment(
+            Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter
+        )
         control_label = QLabel("Controls")
         control_label.setStyleSheet("font-weight: bold; font-size: 12pt;")
-        control_label.setAlignment(Qt.AlignHCenter | Qt.AlignVCenter)
+        control_label.setAlignment(
+            Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter
+        )
         self.status_label = QLabel()
         self.status_label.setStyleSheet(self.status_normal_style)
-        self.status_label.setAlignment(Qt.AlignHCenter)
+        self.status_label.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
         # Layout Formatting
         layout_rules = QHBoxLayout()
@@ -208,6 +225,7 @@ class ControlsView(QWidget):
         self.controls["close"].clicked.connect(self.main.app.quit)
         self.controls["start"].clicked.connect(self.initialize)
         self.controls["new_puzzle"].textActivated.connect(self.load_puzzle)
+        self.controls["history"].clicked.connect(self.main.right_docker.toggle)
         self.rules["eto_rule"].clicked.connect(
             lambda: self.run_rule("elimination_to_one")
         )
@@ -248,8 +266,57 @@ class ControlsView(QWidget):
         self.main.update_gui()
 
 
+class RightDocker(QDockWidget):
+    def __init__(self, sudoku: Sudoku, main: SSolveMain) -> None:
+        super().__init__()
+
+        self.history_widget = HistoryWidget(sudoku, main)
+        self.setWidget(self.history_widget)
+        self.setFeatures(QDockWidget.DockWidgetFeature.NoDockWidgetFeatures)
+        self.hide()
+        self.hidden = True
+
+    def toggle(self):
+        if self.hidden:
+            self.show()
+            self.hidden = False
+        else:
+            self.hide()
+            self.hidden = True
+
+
+class HistoryWidget(QWidget):
+    def __init__(self, sudoku: Sudoku, main: SSolveMain) -> None:
+        super().__init__()
+
+        self.sudoku = sudoku
+        self.main = main
+        self.right_button = QPushButton("Forward (l)")
+        self.left_button = QPushButton("Back (h)")
+        self.history_log = QWidget()
+
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(self.left_button)
+        button_layout.addWidget(self.right_button)
+        layout = QVBoxLayout()
+        layout.addWidget(self.history_log)
+        layout.addLayout(button_layout)
+        self.setLayout(layout)
+
+        self.right_button.clicked.connect(self.forward)
+        self.left_button.clicked.connect(self.back)
+
+    def back(self):
+        self.sudoku.replay_history("back")
+        self.main.update_gui()
+
+    def forward(self):
+        self.sudoku.replay_history("forward")
+        self.main.update_gui()
+
+
 class HLine(QFrame):
     def __init__(self):
         super(HLine, self).__init__()
-        self.setFrameShape(QFrame.HLine)
-        self.setFrameShadow(QFrame.Sunken)
+        self.setFrameShape(QFrame.Shape.HLine)
+        self.setFrameShadow(QFrame.Shadow.Sunken)
