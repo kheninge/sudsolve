@@ -40,6 +40,7 @@ class Cell:
         }
         self.rules = {
             "update_potentials": self._update_potentials,
+            "eliminate_visible": self._rule_elimination,
             "elimination_to_one": self._rule_elimination_to_one,
             "single_possible_location": self._rule_single_possible_location,
             "matched_pairs": self._rule_matched_pairs,
@@ -257,6 +258,18 @@ class Cell:
 
         _ = self._update_potentials()
         return self.rules[rule]()
+
+    def _rule_elimination(self) -> bool:
+        """Eliminate all solutions seen in constrained spaces and if a single potential is left designate it
+        the solution"""
+        progress = False
+        if len(self._potentials) == 1:
+            # Solved
+            mysolution = self._potentials.pop()
+            self._set_solution(mysolution)
+            progress = True
+
+        return progress
 
     def _rule_elimination_to_one(self) -> bool:
         """Eliminate all solutions seen in constrained spaces and if a single potential is left designate it

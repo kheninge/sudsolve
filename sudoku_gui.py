@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QMainWindow,
     QPushButton,
+    QStackedWidget,
     QWidget,
     QHBoxLayout,
     QVBoxLayout,
@@ -132,29 +133,83 @@ class NineSquareView(QWidget):
         self.setLayout(layout)
 
 
-class CellWidget(QLabel):
+class CellWidget(QStackedWidget):
     style_normal_background = " border: 1px solid black; font-size: 18pt;"
     style_yellow_background = (
         "background-color: yellow; border: 1px solid black; font-size: 18pt;"
     )
+    style_hints_normal_no_border = "border: none; font-size: 8pt;"
 
     def __init__(self, main) -> None:
         super().__init__()
-        cell_dim = main.full_width / 25
-        self.setStyleSheet(self.style_normal_background)
+        cell_dim = int(main.full_width * 0.045)
         self.setFixedSize(cell_dim, cell_dim)
-        self.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
+        self.hint_wrapper = QWidget()
+        self.hint_wrapper.setStyleSheet(self.style_normal_background)
+        self.hint_view = PotentialHintsWidget(main)
+        self.hint_view.setParent(self.hint_wrapper)
+        self.hint_view.setStyleSheet(self.style_hints_normal_no_border)
+        self.solved_view = QLabel()
+        self.solved_view.setStyleSheet(self.style_normal_background)
+        self.solved_view.setAlignment(
+            Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter
+        )
+        self.addWidget(self.hint_wrapper)
+        self.addWidget(self.solved_view)
+        self.setCurrentIndex(1)
 
     def update_cell(self, cell_model: Cell):
         if cell_model.solved:
             val = str(cell_model.solution)  # Labels take strings not int
+            self.solved_view.setText(val)
+            if cell_model.new_solution:
+                self.solved_view.setStyleSheet(self.style_yellow_background)
+            else:
+                self.solved_view.setStyleSheet(self.style_normal_background)
+            self.setCurrentIndex(1)
         else:
-            val = ""
-        self.setText(val)
-        if cell_model.new_solution:
-            self.setStyleSheet(self.style_yellow_background)
-        else:
-            self.setStyleSheet(self.style_normal_background)
+            self.hint_wrapper.setStyleSheet(self.style_normal_background)
+            self.hint_view.setStyleSheet(self.style_hints_normal_no_border)
+            for i in range(1, 10):
+                if i in cell_model.potentials:
+                    self.hint_view.hint[i - 1].setText(str(i))
+                else:
+                    self.hint_view.hint[i - 1].setText("")
+            self.setCurrentIndex(0)
+        self.hint_view.update_hint()
+
+
+class PotentialHintsWidget(QWidget):
+    style_hints_normal_no_border = "border: none; font-size: 8pt;"
+    style_hints_yellow_no_border = (
+        "background-color: yellow;border: none; font-size: 8pt;"
+    )
+
+    def __init__(self, main: SSolveMain) -> None:
+        super().__init__()
+        self.main = main
+        self.hint = []
+        rows = []
+        for _ in range(9):
+            self.hint.append(QLabel(self))
+        for _ in range(3):
+            rows.append(QHBoxLayout())
+        for row_index, row in enumerate(rows):
+            for i in range(3):
+                row.addWidget(self.hint[row_index * 3 + i])
+        hint_layout = QVBoxLayout()
+        for i in range(3):
+            hint_layout.addLayout(rows[i])
+        self.setLayout(hint_layout)
+        for h in self.hint:
+            h.setStyleSheet(self.style_hints_normal_no_border)
+            h.setAlignment(
+                Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter
+            )
+
+    def update_hint(self):
+        for hint in self.hint:
+            hint.setStyleSheet(self.style_hints_normal_no_border)
 
 
 class ControlsView(QWidget):
@@ -194,6 +249,7 @@ class ControlsView(QWidget):
         for contr in self.controls:
             self.controls[contr].setFixedSize(self.control_width, self.control_height)
         self.rules = {
+            "elimination": QPushButton("Eliminate Visible(0)"),
             "eto_rule": QPushButton("Elimination to One (1)"),
             "spl_rule": QPushButton("Single Possible Location (2)"),
             "aligned_rule": QPushButton("Aligned Potentials (3)"),
@@ -241,6 +297,9 @@ class ControlsView(QWidget):
         self.controls["start"].clicked.connect(self.initialize)
         self.controls["new_puzzle"].textActivated.connect(self.load_puzzle)
         self.controls["history"].clicked.connect(self.main.right_docker.toggle)
+        self.rules["elimination"].clicked.connect(
+            lambda: self.run_rule("eliminate_visible")
+        )
         self.rules["eto_rule"].clicked.connect(
             lambda: self.run_rule("elimination_to_one")
         )
@@ -285,6 +344,7 @@ class RightDocker(QDockWidget):
     def __init__(self, sudoku: Sudoku, main: SSolveMain) -> None:
         super().__init__()
 
+        self.main = main
         self.history_widget = HistoryWidget(sudoku, main)
         self.setWidget(self.history_widget)
         self.setFeatures(QDockWidget.DockWidgetFeature.NoDockWidgetFeatures)
