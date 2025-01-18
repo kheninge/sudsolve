@@ -69,6 +69,10 @@ class SSolveMain(QMainWindow):
         shortcut_spl.activated.connect(
             lambda: self.control_widget.run_rule("single_possible_location")
         )
+        shortcut_spl = QShortcut(QKeySequence("4"), self)
+        shortcut_spl.activated.connect(
+            lambda: self.control_widget.run_rule("matched_pairs")
+        )
         shortcut_hist_show = QShortcut(QKeySequence("d"), self)
         shortcut_hist_show.activated.connect(self.right_docker.toggle)
 
