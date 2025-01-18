@@ -34,7 +34,12 @@ class SSolveMain(QMainWindow):
 
         self.app = app
         self.sudoku = sudoku
-        self.puzzle_widget = SudokuView(sudoku)
+        # Determine available screen size so we can make the sudoku app fit
+        screens = self.app.screens()
+        geometry = screens[0].availableGeometry()
+        self.full_width = geometry.width()
+        self.full_height = geometry.height()
+        self.puzzle_widget = SudokuView(sudoku, self)
         self.right_docker = RightDocker(sudoku, self)
         self.control_widget = ControlsView(sudoku, self, puzzles_dict)
 
@@ -47,6 +52,7 @@ class SSolveMain(QMainWindow):
         main_layout.addWidget(self.puzzle_widget)
         main_layout.addWidget(self.control_widget)
         main_widget = QWidget()
+        main_widget.setFixedWidth(int(self.full_width * 0.60))
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.right_docker)
@@ -91,7 +97,7 @@ class SSolveMain(QMainWindow):
 
 
 class SudokuView(QWidget):
-    def __init__(self, sudoku: Sudoku) -> None:
+    def __init__(self, sudoku: Sudoku, main) -> None:
         super().__init__()
         self.sudoku = sudoku
         self.ns = []  # Keep a list of nine-squares
@@ -100,7 +106,7 @@ class SudokuView(QWidget):
         layout = QGridLayout()
         for i in range(3):
             for j in range(3):
-                widget = NineSquareView()
+                widget = NineSquareView(main)
                 self.ns.append(widget)
                 layout.addWidget(widget, i, j)
         self.setLayout(layout)
@@ -112,7 +118,7 @@ class SudokuView(QWidget):
 
 
 class NineSquareView(QWidget):
-    def __init__(self) -> None:
+    def __init__(self, main) -> None:
         super().__init__()
 
         # Create layout of 9 widgets to represent cells in a nine-square
@@ -120,7 +126,7 @@ class NineSquareView(QWidget):
         layout = QGridLayout()
         for i in range(3):
             for j in range(3):
-                cell_widget = CellWidget()
+                cell_widget = CellWidget(main)
                 self.cells.append(cell_widget)
                 layout.addWidget(cell_widget, i, j)
         self.setLayout(layout)
@@ -132,10 +138,11 @@ class CellWidget(QLabel):
         "background-color: yellow; border: 1px solid black; font-size: 18pt;"
     )
 
-    def __init__(self) -> None:
+    def __init__(self, main) -> None:
         super().__init__()
+        cell_dim = main.full_width / 25
         self.setStyleSheet(self.style_normal_background)
-        self.setFixedSize(75, 75)
+        self.setFixedSize(cell_dim, cell_dim)
         self.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
 
     def update_cell(self, cell_model: Cell):
@@ -151,9 +158,10 @@ class CellWidget(QLabel):
 
 
 class ControlsView(QWidget):
-    control_height = 50
-    control_width = 130
-    rule_width = 200
+    # Below is original hard coded values.
+    # control_height = 50
+    # control_width = 130
+    # rule_width = 200
 
     status_normal_style = "font-size: 16pt;"
     status_success_style = "color: green; font-size: 16pt;"
@@ -169,6 +177,9 @@ class ControlsView(QWidget):
         self.sudoku = sudoku
         self.main = mainwindow
         self.puzzles_dict = puzzles_dict
+        self.control_height = self.main.full_width / 45
+        self.control_width = self.main.full_width / 14
+        self.rule_width = self.main.full_width / 9
 
         # Create the Control and Rule Buttons
         self.controls = {
@@ -180,8 +191,8 @@ class ControlsView(QWidget):
         self.controls["new_puzzle"].setPlaceholderText("Choose a Puzzle")
         self.controls["new_puzzle"].addItems(puzzles_dict.keys())
         # Size the buttons
-        for foo in self.controls:
-            self.controls[foo].setFixedSize(self.control_width, self.control_height)
+        for contr in self.controls:
+            self.controls[contr].setFixedSize(self.control_width, self.control_height)
         self.rules = {
             "eto_rule": QPushButton("Elimination to One (1)"),
             "spl_rule": QPushButton("Single Possible Location (2)"),
@@ -284,9 +295,11 @@ class RightDocker(QDockWidget):
         if self.hidden:
             self.show()
             self.hidden = False
+            self.width = 0
         else:
             self.hide()
             self.hidden = True
+            self.width = self.main.full_width / 5
 
 
 class HistoryWidget(QWidget):
