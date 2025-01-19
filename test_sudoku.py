@@ -65,6 +65,7 @@ def test_sudoku_elimination_to_one():
     puzzle.initialize()
     progress = puzzle.run_rule("elimination_to_one")
     assert progress
+    assert puzzle.sudoku[0].ns[1].eliminated == {1, 2, 5, 6, 7, 8, 9}
     sols = puzzle.solutions
     # print("KHH")
     # print(sols)

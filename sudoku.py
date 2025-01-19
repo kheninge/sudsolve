@@ -33,6 +33,7 @@ class Cell:
         self._solved_value: CellValType = None
         self._new_solution: bool = False
         self._potentials: set[int] = set(range(1, 10))
+        self._eliminated = set()
         self._next: dict[str, "None | Cell"] = {
             "row": None,
             "col": None,
@@ -132,8 +133,15 @@ class Cell:
     def potentials(self) -> set[int]:
         return self._potentials
 
+    @property
+    def eliminated(self) -> set[int]:
+        return self._eliminated
+
     def clear_potentials(self) -> None:
         self._potentials.clear()
+
+    def clear_eliminated(self) -> None:
+        self._eliminated.clear()
 
     def add_potential(self, val: int) -> None:
         self._check_cell_is_legal(val)
@@ -143,6 +151,7 @@ class Cell:
         self._check_cell_is_legal(val)
         if val in self._potentials:
             self._potentials.remove(val)
+            self._eliminated.add(val)
 
     def check_consistency(self) -> bool:
         """Check that current solution state is legal. Used to catch any logic problems early, shouldn't find them
@@ -196,6 +205,7 @@ class Cell:
             self._initial_value = None
             self._solved_value = None
             self._potentials = set(range(1, 10))
+        self.clear_eliminated()
         self.clear_new_solution()
 
     def _update_potentials(self) -> bool:
@@ -260,15 +270,9 @@ class Cell:
         return self.rules[rule]()
 
     def _rule_elimination(self) -> bool:
-        """Eliminate all solutions seen in constrained spaces and if a single potential is left designate it
-        the solution"""
+        """Eliminate all solutions seen in constrained spaces. This step is run for every rule, but in this case
+        just run the elimination step"""
         progress = False
-        if len(self._potentials) == 1:
-            # Solved
-            mysolution = self._potentials.pop()
-            self._set_solution(mysolution)
-            progress = True
-
         return progress
 
     def _rule_elimination_to_one(self) -> bool:
@@ -537,6 +541,11 @@ class Sudoku:
         logger.info("Sudoku Class starting rule %s", rule)
         self._initial_state = False
         total_result = False
+        # Need to clear this out here because want to capture the elimination from both the potential update
+        # and the rule which gets run
+        for s in self.sudoku:
+            for c in s.ns:
+                c.clear_eliminated()
         if not history_mode:
             self.history.push_rule(rule)
         _ = self.update_all_potentials()  # Do this for all cells before any rule runs

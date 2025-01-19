@@ -139,6 +139,9 @@ class CellWidget(QStackedWidget):
         "background-color: yellow; border: 1px solid black; font-size: 18pt;"
     )
     style_hints_normal_no_border = "border: none; font-size: 8pt;"
+    style_hints_yellow_no_border = (
+        "background-color: yellow;border: none; font-size: 8pt;"
+    )
 
     def __init__(self, main) -> None:
         super().__init__()
@@ -175,8 +178,13 @@ class CellWidget(QStackedWidget):
                     self.hint_view.hint[i - 1].setText(str(i))
                 else:
                     self.hint_view.hint[i - 1].setText("")
+            for h in self.hint_view.hint:
+                h.setStyleSheet(self.style_hints_normal_no_border)
+            for e in cell_model.eliminated:
+                self.hint_view.hint[e - 1].setStyleSheet(
+                    self.style_hints_yellow_no_border
+                )
             self.setCurrentIndex(0)
-        self.hint_view.update_hint()
 
 
 class PotentialHintsWidget(QWidget):
@@ -207,10 +215,6 @@ class PotentialHintsWidget(QWidget):
                 Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter
             )
 
-    def update_hint(self):
-        for hint in self.hint:
-            hint.setStyleSheet(self.style_hints_normal_no_border)
-
 
 class ControlsView(QWidget):
     # Below is original hard coded values.
@@ -234,7 +238,7 @@ class ControlsView(QWidget):
         self.puzzles_dict = puzzles_dict
         self.control_height = self.main.full_width / 45
         self.control_width = self.main.full_width / 14
-        self.rule_width = self.main.full_width / 9
+        self.rule_width = int(self.main.full_width / 9)
 
         # Create the Control and Rule Buttons
         self.controls = {
