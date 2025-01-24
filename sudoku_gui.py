@@ -53,7 +53,7 @@ class SSolveMain(QMainWindow):
         main_layout.addWidget(self.puzzle_widget)
         main_layout.addWidget(self.control_widget)
         main_widget = QWidget()
-        main_widget.setFixedWidth(int(self.full_width * 0.60))
+        main_widget.setFixedWidth(int(self.full_width * 0.40))
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.right_docker)
@@ -107,7 +107,7 @@ class SudokuView(QWidget):
         layout = QGridLayout()
         for i in range(3):
             for j in range(3):
-                widget = NineSquareView(main)
+                widget = NineSquareView(main, self)
                 self.ns.append(widget)
                 layout.addWidget(widget, i, j)
         self.setLayout(layout)
@@ -119,26 +119,27 @@ class SudokuView(QWidget):
 
 
 class NineSquareView(QWidget):
-    def __init__(self, main) -> None:
-        super().__init__()
+    def __init__(self, main, parent) -> None:
+        super().__init__(parent)
 
         # Create layout of 9 widgets to represent cells in a nine-square
         self.cells = []  # track the widgets in this list
         layout = QGridLayout()
         for i in range(3):
             for j in range(3):
-                cell_widget = CellWidget(main)
+                cell_widget = CellWidget(main, self)
                 self.cells.append(cell_widget)
                 layout.addWidget(cell_widget, i, j)
         self.setLayout(layout)
 
 
 class CellWidget(QStackedWidget):
-    def __init__(self, main) -> None:
-        super().__init__()
-        cell_dim = int(main.full_width * 0.045)
-        self.setFixedSize(cell_dim, cell_dim)
-        normal_font = int(cell_dim * 0.5)
+    def __init__(self, main, parent) -> None:
+        super().__init__(parent)
+        self.parent = parent
+        cell_dim = self.width()
+        self.setFixedHeight(cell_dim)
+        normal_font = int(cell_dim * 0.6)
         update_font = int(cell_dim * 0.20)
         self.style_normal_background = (
             f" border: 1px solid black; font-size: {normal_font}px;"
@@ -189,10 +190,8 @@ class CellWidget(QStackedWidget):
 
 
 class PotentialHintsWidget(QWidget):
-    style_hints_normal_no_border = "border: none; font-size: 8pt;"
-    style_hints_yellow_no_border = (
-        "background-color: yellow;border: none; font-size: 8pt;"
-    )
+    style_hints_normal_no_border = "border: none; "
+    style_hints_yellow_no_border = "background-color: yellow;border: none; "
 
     def __init__(self, main: SSolveMain) -> None:
         super().__init__()
