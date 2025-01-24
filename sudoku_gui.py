@@ -138,9 +138,11 @@ class CellWidget(QStackedWidget):
         super().__init__(parent)
         self.parent = parent
         cell_dim = self.width()
+        # Hints cells are kind of squished to the left so 1/2 just gives more room in the case of a 2 pixel remainder
+        hint_dim = int(cell_dim * 0.40)
         self.setFixedHeight(cell_dim)
         normal_font = int(cell_dim * 0.6)
-        update_font = int(cell_dim * 0.20)
+        update_font = int(cell_dim * 0.15)
         self.style_normal_background = (
             f" border: 1px solid black; font-size: {normal_font}px;"
         )
@@ -151,7 +153,7 @@ class CellWidget(QStackedWidget):
         self.style_hints_yellow_no_border = f"background-color: yellow;border: none; color: gray; font-size: {update_font}px;"
         self.hint_wrapper = QWidget()
         self.hint_wrapper.setStyleSheet(self.style_normal_background)
-        self.hint_view = PotentialHintsWidget(main)
+        self.hint_view = HintsWidget(main, hint_dim)
         self.hint_view.setParent(self.hint_wrapper)
         self.hint_view.setStyleSheet(self.style_hints_normal_no_border)
         self.solved_view = QLabel()
@@ -189,17 +191,19 @@ class CellWidget(QStackedWidget):
             self.setCurrentIndex(0)
 
 
-class PotentialHintsWidget(QWidget):
+class HintsWidget(QWidget):
     style_hints_normal_no_border = "border: none; "
     style_hints_yellow_no_border = "background-color: yellow;border: none; "
 
-    def __init__(self, main: SSolveMain) -> None:
+    def __init__(self, main: SSolveMain, dim: int) -> None:
         super().__init__()
         self.main = main
         self.hint = []
         rows = []
         for _ in range(9):
-            self.hint.append(QLabel(self))
+            h = QLabel(self)
+            h.setFixedWidth(dim)
+            self.hint.append(h)
         for _ in range(3):
             rows.append(QHBoxLayout())
         for row_index, row in enumerate(rows):

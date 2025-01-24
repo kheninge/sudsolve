@@ -58,7 +58,7 @@ class Cell:
                 raise ValueError
         logger.debug("Cell Value for cell id %d is legal", self.id)
 
-    def _check_network_connection(self) -> bool:
+    def _check_network_connectivity(self) -> bool:
         """Check to make sure everything is connected properly for this cell; make sure no endless loops
         on network traversals."""
         # Iterate over row, col and square.
@@ -84,7 +84,7 @@ class Cell:
 
     @property
     def connection_ok(self) -> bool:
-        return self._check_network_connection()
+        return self._check_network_connectivity()
 
     @property
     def solved(self) -> bool:
