@@ -134,19 +134,20 @@ class NineSquareView(QWidget):
 
 
 class CellWidget(QStackedWidget):
-    style_normal_background = " border: 1px solid black; font-size: 18pt;"
-    style_yellow_background = (
-        "background-color: yellow; border: 1px solid black; font-size: 18pt;"
-    )
-    style_hints_normal_no_border = "border: none; font-size: 8pt;"
-    style_hints_yellow_no_border = (
-        "background-color: yellow;border: none; font-size: 8pt;"
-    )
-
     def __init__(self, main) -> None:
         super().__init__()
         cell_dim = int(main.full_width * 0.045)
         self.setFixedSize(cell_dim, cell_dim)
+        normal_font = int(cell_dim * 0.5)
+        update_font = int(cell_dim * 0.20)
+        self.style_normal_background = (
+            f" border: 1px solid black; font-size: {normal_font}px;"
+        )
+        self.style_yellow_background = f"background-color: yellow; border: 1px solid black; font-size: {normal_font}px;"
+        self.style_hints_normal_no_border = (
+            f"border: none; color: gray; font-size: {update_font}px;"
+        )
+        self.style_hints_yellow_no_border = f"background-color: yellow;border: none; color: gray; font-size: {update_font}px;"
         self.hint_wrapper = QWidget()
         self.hint_wrapper.setStyleSheet(self.style_normal_background)
         self.hint_view = PotentialHintsWidget(main)
