@@ -40,6 +40,7 @@ class SSolveMain(QMainWindow):
         geometry = screens[0].availableGeometry()
         self.full_width = geometry.width()
         self.full_height = geometry.height()
+        self.main_width = int(self.full_width * 0.40)
         self.puzzle_widget = SudokuView(sudoku, self)
         self.right_docker = RightDocker(sudoku, self)
         self.control_widget = ControlsView(sudoku, self, puzzles_dict)
@@ -53,7 +54,7 @@ class SSolveMain(QMainWindow):
         main_layout.addWidget(self.puzzle_widget)
         main_layout.addWidget(self.control_widget)
         main_widget = QWidget()
-        main_widget.setFixedWidth(int(self.full_width * 0.40))
+        main_widget.setFixedWidth(self.main_width)
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.right_docker)
@@ -240,9 +241,9 @@ class ControlsView(QWidget):
         self.sudoku = sudoku
         self.main = mainwindow
         self.puzzles_dict = puzzles_dict
-        self.control_height = self.main.full_width / 45
-        self.control_width = self.main.full_width / 14
-        self.rule_width = int(self.main.full_width / 9)
+        self.control_height = self.main.main_width / 30
+        self.control_width = self.main.main_width / 12
+        self.rule_width = int(self.main.main_width / 7)
 
         # Create the Control and Rule Buttons
         self.controls = {
