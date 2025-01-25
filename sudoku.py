@@ -45,6 +45,7 @@ class Cell:
             "elimination_to_one": self._rule_elimination_to_one,
             "single_possible_location": self._rule_single_possible_location,
             "matched_pairs": self._rule_matched_pairs,
+            # "aligned_potentials": self._aligned_potentials,
         }
         self.initialize(initial)
 
@@ -356,34 +357,34 @@ class NineSquare:
 
     def __init__(self, id: int = 0) -> None:
         self.id: int = id
-        self.ns: list[Cell] = []  # A list of cells to represent a NineSquare
+        self.cells: list[Cell] = []  # A list of cells to represent a NineSquare
         # Instantiate Cells
         for i in range(9):
             # TODO - 9 is hard code everywhere. Should it be a macro?
-            self.ns.append(Cell(self.id * 9 + i))
+            self.cells.append(Cell(self.id * 9 + i))
         # Connect up rows of the NineSquare
         for i in (0, 3, 6):
-            self.ns[i].rnext = self.ns[i + 1]
-            self.ns[i + 1].rnext = self.ns[i + 2]
-            self.ns[i + 2].rnext = self.ns[i]
+            self.cells[i].rnext = self.cells[i + 1]
+            self.cells[i + 1].rnext = self.cells[i + 2]
+            self.cells[i + 2].rnext = self.cells[i]
         # Connect up columns of the NineSquare
         for i in range(3):
-            self.ns[i].cnext = self.ns[i + 3]
-            self.ns[i + 3].cnext = self.ns[i + 6]
-            self.ns[i + 6].cnext = self.ns[i]
+            self.cells[i].cnext = self.cells[i + 3]
+            self.cells[i + 3].cnext = self.cells[i + 6]
+            self.cells[i + 6].cnext = self.cells[i]
         # Connect up the NineSquare Loop
         for i in range(8):
-            self.ns[i].snext = self.ns[i + 1]
-        self.ns[8].snext = self.ns[0]
+            self.cells[i].snext = self.cells[i + 1]
+        self.cells[8].snext = self.cells[0]
 
     def initialize(self, vals: NineSquareValType) -> None:
         for i in range(9):
-            self.ns[i].initialize(vals[i])
+            self.cells[i].initialize(vals[i])
 
     @property
     def solved(self) -> bool:
         all_solved = True
-        for cell in self.ns:
+        for cell in self.cells:
             all_solved &= cell.solved
         return all_solved
 
@@ -391,30 +392,30 @@ class NineSquare:
     def solutions(self) -> NineSquareValType:
         sols = []
         for i in range(9):
-            sols.append(self.ns[i].solution)
+            sols.append(self.cells[i].solution)
         return tuple(sols)
 
     def cell(self, row: int, col: int) -> Cell:
         """returns a cell pases on row and column coordinates"""
         i = row * 3 + col
-        return self.ns[i]
+        return self.cells[i]
 
     def attach_row(self, other: "NineSquare") -> None:
         """Connect this NineSquare to another to the right"""
-        self.ns[2].rnext = other.cell(0, 0)
-        self.ns[5].rnext = other.cell(1, 0)
-        self.ns[8].rnext = other.cell(2, 0)
+        self.cells[2].rnext = other.cell(0, 0)
+        self.cells[5].rnext = other.cell(1, 0)
+        self.cells[8].rnext = other.cell(2, 0)
 
     def attach_col(self, other: "NineSquare") -> None:
         """Connect this NineSquare to another below"""
-        self.ns[6].cnext = other.cell(0, 0)
-        self.ns[7].cnext = other.cell(0, 1)
-        self.ns[8].cnext = other.cell(0, 2)
+        self.cells[6].cnext = other.cell(0, 0)
+        self.cells[7].cnext = other.cell(0, 1)
+        self.cells[8].cnext = other.cell(0, 2)
 
     def check_consistency(self) -> bool:
         total_result = True
         for i in range(9):
-            total_result &= self.ns[i].check_consistency()
+            total_result &= self.cells[i].check_consistency()
         return total_result
 
     def run_rule(self, rule: str) -> bool:
@@ -422,7 +423,7 @@ class NineSquare:
         logger.info("NineSquare %d starting rule %s", self.id, rule)
         total_result = False
         for i in range(9):
-            total_result |= self.ns[i].run_rule(rule)
+            total_result |= self.cells[i].run_rule(rule)
         logger.debug(
             "NineSquare %d completing %s, result is %d",
             self.id,
@@ -459,24 +460,24 @@ class Sudoku:
         self._initial_state = True
         self._last_rule_progressed = False
         self.history = History()
-        self.sudoku: list[NineSquare] = []
+        self.ns: list[NineSquare] = []
         for i in range(9):
-            self.sudoku.append(NineSquare(i))
+            self.ns.append(NineSquare(i))
         # Connect up the rows
         for i in (0, 3, 6):
-            self.sudoku[i].attach_row(self.sudoku[i + 1])
-            self.sudoku[i + 1].attach_row(self.sudoku[i + 2])
-            self.sudoku[i + 2].attach_row(self.sudoku[i])
+            self.ns[i].attach_row(self.ns[i + 1])
+            self.ns[i + 1].attach_row(self.ns[i + 2])
+            self.ns[i + 2].attach_row(self.ns[i])
         # Connect up the columns
         for i in range(3):
-            self.sudoku[i].attach_col(self.sudoku[i + 3])
-            self.sudoku[i + 3].attach_col(self.sudoku[i + 6])
-            self.sudoku[i + 6].attach_col(self.sudoku[i])
+            self.ns[i].attach_col(self.ns[i + 3])
+            self.ns[i + 3].attach_col(self.ns[i + 6])
+            self.ns[i + 6].attach_col(self.ns[i])
         # Run a quick check of the completed sudoku network from the cell perspective
         # if it fails it will trigger an exception, so the answer isn't really needed.
         # TODO this is wrong. it only runs network from 1 cell perspective. Also it means Sudoku has to understand
         # cell methods??
-        _ = self.sudoku[0].cell(0, 0).connection_ok
+        _ = self.ns[0].cell(0, 0).connection_ok
 
     def load(self, init_val: SudokuValType):
         self.init_val = init_val
@@ -489,14 +490,14 @@ class Sudoku:
             if not history_mode:
                 self.history.clear()
             for i in range(9):
-                self.sudoku[i].initialize(self.init_val[i])
+                self.ns[i].initialize(self.init_val[i])
             logger.info("Sudoku Class finished initialization")
         self._initial_state = True
 
     @property
     def solved(self) -> bool:
         all_solved = True
-        for ns in self.sudoku:
+        for ns in self.ns:
             all_solved &= ns.solved
         return all_solved
 
@@ -513,7 +514,7 @@ class Sudoku:
     def solutions(self) -> SudokuValType:
         sols = []
         for i in range(9):
-            sols.append(self.sudoku[i].solutions)
+            sols.append(self.ns[i].solutions)
         return tuple(sols)
 
     # TODO The following functions all do the same thing. Traverse the ninesquares calling this same function at that
@@ -522,12 +523,12 @@ class Sudoku:
     def check_consistency(self) -> bool:
         total_result = True
         for i in range(9):
-            total_result &= self.sudoku[i].check_consistency()
+            total_result &= self.ns[i].check_consistency()
         return total_result
 
     def update_all_potentials(self) -> bool:
         total_result = False
-        for square in self.sudoku:
+        for square in self.ns:
             total_result |= square.run_rule("update_potentials")
         logger.info(
             "Sudoku Class finishing elimination_to_one result is %d", total_result
@@ -543,13 +544,13 @@ class Sudoku:
         total_result = False
         # Need to clear this out here because want to capture the elimination from both the potential update
         # and the rule which gets run
-        for s in self.sudoku:
-            for c in s.ns:
+        for s in self.ns:
+            for c in s.cells:
                 c.clear_eliminated()
         if not history_mode:
             self.history.push_rule(rule)
         _ = self.update_all_potentials()  # Do this for all cells before any rule runs
-        for square in self.sudoku:
+        for square in self.ns:
             total_result |= square.run_rule(rule)
         logger.info(
             "Sudoku Class finishing elimination_to_one result is %d", total_result

@@ -115,7 +115,7 @@ class SudokuView(QWidget):
     def update_sudoku(self) -> None:
         for i, ns in enumerate(self.ns):
             for j, cell in enumerate(ns.cells):
-                cell.update_cell(self.sudoku.sudoku[i].ns[j])
+                cell.update_cell(self.sudoku.ns[i].cells[j])
 
 
 class NineSquareView(QWidget):

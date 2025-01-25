@@ -65,7 +65,7 @@ def test_sudoku_elimination_to_one():
     puzzle.initialize()
     progress = puzzle.run_rule("elimination_to_one")
     assert progress
-    assert puzzle.sudoku[0].ns[1].eliminated == {1, 2, 5, 6, 7, 8, 9}
+    assert puzzle.ns[0].cells[1].eliminated == {1, 2, 5, 6, 7, 8, 9}
     sols = puzzle.solutions
     # print("KHH")
     # print(sols)
@@ -222,7 +222,7 @@ def test_sudoku_matched_pairs_single_pair():
     puzzle.initialize()
     progress = puzzle.run_rule("matched_pairs")
     assert progress
-    pots = puzzle.sudoku[0].cell(1, 1).potentials
+    pots = puzzle.ns[0].cell(1, 1).potentials
     assert pots == {1, 2}
 
 
@@ -244,9 +244,9 @@ def test_sudoku_matched_pairs_four_pairs():
     puzzle.initialize()
     progress = puzzle.run_rule("matched_pairs")
     assert progress
-    pots = puzzle.sudoku[0].cell(1, 2).potentials
+    pots = puzzle.ns[0].cell(1, 2).potentials
     assert pots == {1, 7}
-    pots = puzzle.sudoku[0].cell(2, 0).potentials
+    pots = puzzle.ns[0].cell(2, 0).potentials
     assert pots == {2}
 
 
@@ -268,7 +268,7 @@ def test_sudoku_matched_pairs_four_pairs_only_two_matched():
     puzzle.initialize()
     progress = puzzle.run_rule("matched_pairs")
     assert progress
-    pots = puzzle.sudoku[0].cell(0, 0).potentials
+    pots = puzzle.ns[0].cell(0, 0).potentials
     assert pots == {1, 5}
-    pots = puzzle.sudoku[0].cell(0, 1).potentials
+    pots = puzzle.ns[0].cell(0, 1).potentials
     assert pots == {1, 5}
