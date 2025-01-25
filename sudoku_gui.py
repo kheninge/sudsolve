@@ -317,6 +317,9 @@ class ControlsView(QWidget):
         self.rules["matched_pairs"].clicked.connect(
             lambda: self.run_rule("matched_pairs")
         )
+        self.rules["aligned_rule"].clicked.connect(
+            lambda: self.run_rule("aligned_potentials")
+        )
 
     def update_controls(self) -> None:
         if self.sudoku.initial_state:

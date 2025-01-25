@@ -45,7 +45,6 @@ class Cell:
             "elimination_to_one": self._rule_elimination_to_one,
             "single_possible_location": self._rule_single_possible_location,
             "matched_pairs": self._rule_matched_pairs,
-            # "aligned_potentials": self._aligned_potentials,
         }
         self.initialize(initial)
 
@@ -148,11 +147,14 @@ class Cell:
         self._check_cell_is_legal(val)
         self._potentials.add(val)
 
-    def remove_potential(self, val: int) -> None:
+    def remove_potential(self, val: int) -> bool:
         self._check_cell_is_legal(val)
         if val in self._potentials:
             self._potentials.remove(val)
             self._eliminated.add(val)
+            return True
+        else:
+            return False
 
     def check_consistency(self) -> bool:
         """Check that current solution state is legal. Used to catch any logic problems early, shouldn't find them
@@ -190,7 +192,7 @@ class Cell:
             while cell != self:
                 if cell is None:
                     raise Exception("Cell network is not set up correctly")
-                cell.remove_potential(val)
+                _ = cell.remove_potential(val)
                 cell = cell._next[direction]
 
     def initialize(self, val: CellValType) -> None:
@@ -221,7 +223,7 @@ class Cell:
                 if cell is None:
                     raise Exception("Cell network is not set up correctly")
                 if cell.solution:
-                    self.remove_potential(cell.solution)
+                    _ = self.remove_potential(cell.solution)
                 cell = cell._next[direction]
 
             if not self.potentials:
@@ -336,10 +338,99 @@ class Cell:
                             current_pots = c.potentials.copy()
                             for p in current_pots:
                                 if p not in combo:
-                                    c.remove_potential(p)
+                                    _ = c.remove_potential(p)
                                     # success! we actually removed a potential
                                     total_return |= True
         return total_return
+
+
+class SubLine:
+    """Represents the 3 squares overlapping between a square's row or column and the full row or column
+    The concept of a sub row or sub col is useful in solving the aligned potentials rule.
+    A subline also has a list of the non overlapping cells in both the square and the line.
+    Given a base cell and a direction, the constructor will traverse the cell network and build a list of :
+    subrow, non-matching squares, non-matching row/col
+
+
+    """
+
+    def __init__(self, base: Cell, direction: str) -> None:
+        self.overlap = []
+        self.sq_non_over_lap = []
+        self.ln_non_over_lap = []
+
+        next = base
+        if direction == "row":
+            # Build list of overlap by grabbing first 3 of the row
+            for _ in range(3):
+                if next is None:
+                    raise Exception("Cell network is not set up correctly")
+                self.overlap.append(next)
+                sq_next = next.snext  # find tail of the first row
+                next = next.rnext
+            # Next 6 in the row are the non-overlap
+            for _ in range(6):
+                if next is None:
+                    raise Exception("Cell network is not set up correctly")
+                self.ln_non_over_lap.append(next)
+                next = next.rnext
+            # Next 6 of the circular NineSquare space is the non-overlap
+            for _ in range(6):
+                if sq_next is None:
+                    raise Exception("Cell network is not set up correctly")
+                self.sq_non_over_lap.append(sq_next)
+                sq_next = sq_next.snext
+        else:
+            # Column case
+            for _ in range(3):
+                if next is None:
+                    raise Exception("Cell network is not set up correctly")
+                self.overlap.append(next)
+                next = next.cnext
+            # Next 6 in the col are the non-overlap
+            for _ in range(6):
+                if next is None:
+                    raise Exception("Cell network is not set up correctly")
+                self.ln_non_over_lap.append(next)
+                next = next.cnext
+            next = base
+            for _ in range(9):
+                if next is None:
+                    raise Exception("Cell network is not set up correctly")
+                if next not in self.overlap:
+                    self.sq_non_over_lap.append(next)
+                next = next.snext
+
+    def aligned_potentials(self) -> bool:
+        progress = False
+        # Gather up all of the possible potentials
+        pot_count = dict.fromkeys(range(1, 10), 0)
+        for cell in self.overlap:
+            if cell.solved:
+                continue
+            for num in cell.potentials:
+                pot_count[num] += 1
+        # See which have more than 1
+        for p, cnt in pot_count.items():
+            if cnt > 1:
+                # Check if potential exists in non-overlap square
+                found_in_non_ov_square = False
+                for cell in self.sq_non_over_lap:
+                    if p in cell.potentials:
+                        found_in_non_ov_square = True
+                if not found_in_non_ov_square:
+                    # This is the aligned case
+                    for cell in self.ln_non_over_lap:
+                        progress = progress | cell.remove_potential(p)
+                else:
+                    found_in_non_ov_line = False
+                    for cell in self.ln_non_over_lap:
+                        if p in cell.potentials:
+                            found_in_non_ov_line = True
+                    if not found_in_non_ov_line:
+                        for cell in self.sq_non_over_lap:
+                            progress = progress | cell.remove_potential(p)
+        return progress
 
 
 class NineSquare:
@@ -357,6 +448,9 @@ class NineSquare:
 
     def __init__(self, id: int = 0) -> None:
         self.id: int = id
+        self.rules = {
+            "aligned_potentials": self._rule_aligned_potentials,
+        }
         self.cells: list[Cell] = []  # A list of cells to represent a NineSquare
         # Instantiate Cells
         for i in range(9):
@@ -366,16 +460,29 @@ class NineSquare:
         for i in (0, 3, 6):
             self.cells[i].rnext = self.cells[i + 1]
             self.cells[i + 1].rnext = self.cells[i + 2]
-            self.cells[i + 2].rnext = self.cells[i]
         # Connect up columns of the NineSquare
         for i in range(3):
             self.cells[i].cnext = self.cells[i + 3]
             self.cells[i + 3].cnext = self.cells[i + 6]
-            self.cells[i + 6].cnext = self.cells[i]
         # Connect up the NineSquare Loop
         for i in range(8):
             self.cells[i].snext = self.cells[i + 1]
         self.cells[8].snext = self.cells[0]
+
+    def connect_sublines(self):
+        self.sublines = []
+        for i, cell in enumerate(self.cells):
+            if i == 0:
+                self.sublines.append(SubLine(cell, "row"))
+                self.sublines.append(SubLine(cell, "col"))
+            if i == 1:
+                self.sublines.append(SubLine(cell, "col"))
+            if i == 2:
+                self.sublines.append(SubLine(cell, "col"))
+            if i == 3:
+                self.sublines.append(SubLine(cell, "row"))
+            if i == 6:
+                self.sublines.append(SubLine(cell, "row"))
 
     def initialize(self, vals: NineSquareValType) -> None:
         for i in range(9):
@@ -422,8 +529,13 @@ class NineSquare:
         """Wrapper to send the generic rule to each of the cells"""
         logger.info("NineSquare %d starting rule %s", self.id, rule)
         total_result = False
-        for i in range(9):
-            total_result |= self.cells[i].run_rule(rule)
+        if rule in self.rules.keys():
+            # NineSquare level rule
+            self.rules[rule]()
+        else:
+            # Cell level rule
+            for i in range(9):
+                total_result |= self.cells[i].run_rule(rule)
         logger.debug(
             "NineSquare %d completing %s, result is %d",
             self.id,
@@ -431,6 +543,12 @@ class NineSquare:
             total_result,
         )
         return total_result
+
+    def _rule_aligned_potentials(self):
+        progress = False
+        for subline in self.sublines:
+            progress = progress | subline.aligned_potentials()
+        return progress
 
 
 class Sudoku:
@@ -478,6 +596,8 @@ class Sudoku:
         # TODO this is wrong. it only runs network from 1 cell perspective. Also it means Sudoku has to understand
         # cell methods??
         _ = self.ns[0].cell(0, 0).connection_ok
+        for n in self.ns:
+            n.connect_sublines()
 
     def load(self, init_val: SudokuValType):
         self.init_val = init_val
