@@ -1,14 +1,23 @@
 #!/home/kheninge/virtual_envs/sudsolver/bin/python3
 
+# The below lines are read by the nuitka tool used to compile this script
+# nuitka-project: --include-data-files={MAIN_DIRECTORY}/sudoku.yaml=sudoku.yaml
+# nuitka-project: --enable-plugin=pyside6
+# nuitka-project: --mode=onefile
+#
+# Linux Compile command: python3 -m nuitka sudsolver.py
+
 from PySide6.QtWidgets import QApplication
 from sudoku_gui import SSolveMain
 import sudoku
 import yaml
+from pathlib import Path
 
 
 def main():
     # Read the yaml file, convert the dictionary list to SudokuVal format
-    with open("sudoku.yaml", "r") as file:
+    p = Path(__file__).with_name("sudoku.yaml")
+    with p.open("r") as file:
         stored_puzzles = yaml.safe_load(file)
     puzzles_ninesquare_fmt = convert_to_ns_format(stored_puzzles)
 

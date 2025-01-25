@@ -19,7 +19,6 @@ from sudoku import Sudoku, SudokuValType, Cell
 
 # TODO:
 # * Create a log with sudsovler.py
-# * Swap out a label with hints in the appropriate spots (3x3)
 # * code remaining rules
 # * scripting language to save order of button pushes (stretch)
 # * puzzle editing mode instead of having to edit the yaml file directly (stretch)
