@@ -39,7 +39,7 @@ class Cell:
         self._check_cell_param_is_legal(initial)
         self._solved_value: CellValType = None
         self._new_solution: bool = False
-        self._potentials: set[int] = set(range(1, 10))
+        self._potentials: set[int] = set(SUD_RANGE)
         self._eliminated = set()
         self._next = dict.fromkeys(CSPACES)
         self.rules = {

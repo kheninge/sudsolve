@@ -40,6 +40,8 @@ class SSolveMain(QMainWindow):
         self.full_width = geometry.width()
         self.full_height = geometry.height()
         self.main_width = int(self.full_width * 0.40)
+
+        # Primary Components of Main Window
         self.puzzle_widget = SudokuView(sudoku, self)
         self.right_docker = RightDocker(sudoku, self)
         self.control_widget = ControlsView(sudoku, self, puzzles_dict)
