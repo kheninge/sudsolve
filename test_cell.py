@@ -83,18 +83,18 @@ def test_cell_consistency_check():
     r1c0 = Cell(0, 1)
     r1c1 = Cell(0, 2)
     # connections
-    r0c0.rnext = r0c1
-    r0c1.rnext = r0c0
-    r1c0.rnext = r1c1
-    r1c1.rnext = r1c0
-    r0c0.cnext = r1c0
-    r0c1.cnext = r1c1
-    r1c0.cnext = r0c0
-    r1c1.cnext = r0c1
-    r0c0.snext = r0c1
-    r0c1.snext = r1c0
-    r1c0.snext = r1c1
-    r1c1.snext = r0c0
+    r0c0.connect("row", r0c1)
+    r0c1.connect("row", r0c0)
+    r1c0.connect("row", r1c1)
+    r1c1.connect("row", r1c0)
+    r0c0.connect("col", r1c0)
+    r0c1.connect("col", r1c1)
+    r1c0.connect("col", r0c0)
+    r1c1.connect("col", r0c1)
+    r0c0.connect("square", r0c1)
+    r0c1.connect("square", r1c0)
+    r1c0.connect("square", r1c1)
+    r1c1.connect("square", r0c0)
     assert not r0c0.check_consistency()  # should fail
 
 
@@ -116,35 +116,35 @@ def test_cell_elimination_to_one_loop_solution_not_found():
     r2c1 = Cell(0, 6)
     r2c2 = Cell()
     # row connection
-    r0c0.rnext = r0c1
-    r0c1.rnext = r0c2
-    r0c2.rnext = r0c0
-    r1c0.rnext = r1c1
-    r1c1.rnext = r1c2
-    r1c2.rnext = r1c0
-    r2c0.rnext = r2c1
-    r2c1.rnext = r2c2
-    r2c2.rnext = r2c0
+    r0c0.connect("row", r0c1)
+    r0c1.connect("row", r0c2)
+    r0c2.connect("row", r0c0)
+    r1c0.connect("row", r1c1)
+    r1c1.connect("row", r1c2)
+    r1c2.connect("row", r1c0)
+    r2c0.connect("row", r2c1)
+    r2c1.connect("row", r2c2)
+    r2c2.connect("row", r2c0)
     # column connection
-    r0c0.cnext = r1c0
-    r1c0.cnext = r2c0
-    r2c0.cnext = r0c0
-    r0c1.cnext = r1c1
-    r1c1.cnext = r2c1
-    r2c1.cnext = r0c1
-    r0c2.cnext = r1c2
-    r1c2.cnext = r2c2
-    r2c2.cnext = r0c2
+    r0c0.connect("col", r1c0)
+    r1c0.connect("col", r2c0)
+    r2c0.connect("col", r0c0)
+    r0c1.connect("col", r1c1)
+    r1c1.connect("col", r2c1)
+    r2c1.connect("col", r0c1)
+    r0c2.connect("col", r1c2)
+    r1c2.connect("col", r2c2)
+    r2c2.connect("col", r0c2)
     # square connection
-    r0c0.snext = r0c1
-    r0c1.snext = r0c2
-    r0c2.snext = r1c0
-    r1c0.snext = r1c1
-    r1c1.snext = r1c2
-    r1c2.snext = r2c0
-    r2c0.snext = r2c1
-    r2c1.snext = r2c2
-    r2c2.snext = r0c0
+    r0c0.connect("square", r0c1)
+    r0c1.connect("square", r0c2)
+    r0c2.connect("square", r1c0)
+    r1c0.connect("square", r1c1)
+    r1c1.connect("square", r1c2)
+    r1c2.connect("square", r2c0)
+    r2c0.connect("square", r2c1)
+    r2c1.connect("square", r2c2)
+    r2c2.connect("square", r0c0)
 
     progress = r1c1.run_rule("elimination_to_one")
     assert r1c1.check_consistency()  # should pass
@@ -186,35 +186,35 @@ def test_cell_elimination_to_one_loop_solution_is_found():
     r2c1 = Cell(0, 6)
     r2c2 = Cell(0, 8)
     # row connection
-    r0c0.rnext = r0c1
-    r0c1.rnext = r0c2
-    r0c2.rnext = r0c0
-    r1c0.rnext = r1c1
-    r1c1.rnext = r1c2
-    r1c2.rnext = r1c0
-    r2c0.rnext = r2c1
-    r2c1.rnext = r2c2
-    r2c2.rnext = r2c0
+    r0c0.connect("row", r0c1)
+    r0c1.connect("row", r0c2)
+    r0c2.connect("row", r0c0)
+    r1c0.connect("row", r1c1)
+    r1c1.connect("row", r1c2)
+    r1c2.connect("row", r1c0)
+    r2c0.connect("row", r2c1)
+    r2c1.connect("row", r2c2)
+    r2c2.connect("row", r2c0)
     # column connection
-    r0c0.cnext = r1c0
-    r1c0.cnext = r2c0
-    r2c0.cnext = r0c0
-    r0c1.cnext = r1c1
-    r1c1.cnext = r2c1
-    r2c1.cnext = r0c1
-    r0c2.cnext = r1c2
-    r1c2.cnext = r2c2
-    r2c2.cnext = r0c2
+    r0c0.connect("col", r1c0)
+    r1c0.connect("col", r2c0)
+    r2c0.connect("col", r0c0)
+    r0c1.connect("col", r1c1)
+    r1c1.connect("col", r2c1)
+    r2c1.connect("col", r0c1)
+    r0c2.connect("col", r1c2)
+    r1c2.connect("col", r2c2)
+    r2c2.connect("col", r0c2)
     # square connection
-    r0c0.snext = r0c1
-    r0c1.snext = r0c2
-    r0c2.snext = r1c0
-    r1c0.snext = r1c1
-    r1c1.snext = r1c2
-    r1c2.snext = r2c0
-    r2c0.snext = r2c1
-    r2c1.snext = r2c2
-    r2c2.snext = r0c0
+    r0c0.connect("square", r0c1)
+    r0c1.connect("square", r0c2)
+    r0c2.connect("square", r1c0)
+    r1c0.connect("square", r1c1)
+    r1c1.connect("square", r1c2)
+    r1c2.connect("square", r2c0)
+    r2c0.connect("square", r2c1)
+    r2c1.connect("square", r2c2)
+    r2c2.connect("square", r0c0)
 
     progress = r1c1.run_rule("elimination_to_one")
     assert progress
@@ -238,12 +238,12 @@ def test_cell_single_possible_location():
     row_partner.clear_potentials()  # clear so that they aren't seen by function
     col_partner.clear_potentials()
     square_partner.clear_potentials()
-    my_cell.rnext = row_partner
-    my_cell.cnext = col_partner
-    my_cell.snext = square_partner
-    row_partner.rnext = my_cell
-    col_partner.cnext = my_cell
-    square_partner.snext = my_cell
+    my_cell.connect("row", row_partner)
+    my_cell.connect("col", col_partner)
+    my_cell.connect("square", square_partner)
+    row_partner.connect("row", my_cell)
+    col_partner.connect("col", my_cell)
+    square_partner.connect("square", my_cell)
 
     result = my_cell.run_rule("single_possible_location")
     assert result

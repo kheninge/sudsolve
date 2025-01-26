@@ -14,6 +14,13 @@ SudokuValType: TypeAlias = tuple[NineSquareValType, ...]
 # *  Publish as an executable to windows
 # *  Publish to linux and mac?
 
+## Constant Defines
+CSPACES = ("row", "col", "square")
+SUD_SPACE_SIZE = 9
+SUD_VAL_START = 1
+SUD_VAL_END = SUD_SPACE_SIZE
+SUD_RANGE = range(SUD_VAL_START, SUD_SPACE_SIZE + SUD_VAL_START)
+
 
 class Cell:
     """Datastructure to represent the state of a single cell includes:
@@ -29,16 +36,12 @@ class Cell:
 
     def __init__(self, id: int = 0, initial: CellValType = None) -> None:
         self.id: int = id
-        self._check_cell_is_legal(initial)
+        self._check_cell_param_is_legal(initial)
         self._solved_value: CellValType = None
         self._new_solution: bool = False
         self._potentials: set[int] = set(range(1, 10))
         self._eliminated = set()
-        self._next: dict[str, "None | Cell"] = {
-            "row": None,
-            "col": None,
-            "square": None,
-        }
+        self._next = dict.fromkeys(CSPACES)
         self.rules = {
             "update_potentials": self._update_potentials,
             "eliminate_visible": self._rule_elimination,
@@ -48,13 +51,13 @@ class Cell:
         }
         self.initialize(initial)
 
-    def _check_cell_is_legal(self, val: CellValType) -> None:
+    def _check_cell_param_is_legal(self, val: CellValType) -> None:
         """cell can be initialized to a digit 1 - 9 or to None
         val is either a single int or a set of ints"""
         if val is not None:
             if type(val) is not int:
                 raise ValueError
-            if val < 1 or val > 9:
+            if val < SUD_VAL_START or val > SUD_VAL_END:
                 raise ValueError
         logger.debug("Cell Value for cell id %d is legal", self.id)
 
@@ -62,16 +65,14 @@ class Cell:
         """Check to make sure everything is connected properly for this cell; make sure no endless loops
         on network traversals."""
         # Iterate over row, col and square.
-        for direction in self._next:
+        for direction in CSPACES:
             cell = self
             count = 0
             while True:
-                if cell is None:
-                    raise Exception("Cell network is not set up correctly")
-                cell = cell._next[direction]
+                cell = cell.traverse(direction)
                 count += 1
                 ## Error condition, should never be more than 9 cells in a loop
-                if count > 9:
+                if count > SUD_SPACE_SIZE:
                     logger.error(
                         "Cell %d is looping more than 9 times for %s direction",
                         self.id,
@@ -97,29 +98,11 @@ class Cell:
     def clear_new_solution(self) -> None:
         self._new_solution = False
 
-    @property
-    def rnext(self) -> "Cell | None":
-        return self._next["row"]
+    def connect(self, direction: str, cell: "Cell") -> None:
+        self._next[direction] = cell
 
-    @rnext.setter
-    def rnext(self, pointer: "Cell | None") -> None:
-        self._next["row"] = pointer
-
-    @property
-    def cnext(self) -> "Cell | None":
-        return self._next["col"]
-
-    @cnext.setter
-    def cnext(self, pointer: "Cell | None"):
-        self._next["col"] = pointer
-
-    @property
-    def snext(self) -> "Cell | None":
-        return self._next["square"]
-
-    @snext.setter
-    def snext(self, pointer: "Cell | None"):
-        self._next["square"] = pointer
+    def traverse(self, direction: str) -> "Cell":
+        return self._next[direction]
 
     @property
     def solution(self) -> CellValType:
@@ -144,11 +127,11 @@ class Cell:
         self._eliminated.clear()
 
     def add_potential(self, val: int) -> None:
-        self._check_cell_is_legal(val)
+        self._check_cell_param_is_legal(val)
         self._potentials.add(val)
 
     def remove_potential(self, val: int) -> bool:
-        self._check_cell_is_legal(val)
+        self._check_cell_param_is_legal(val)
         if val in self._potentials:
             self._potentials.remove(val)
             self._eliminated.add(val)
@@ -160,15 +143,15 @@ class Cell:
         """Check that current solution state is legal. Used to catch any logic problems early, shouldn't find them
         if there are no errors"""
 
-        for direction in self._next:
-            solution_count = dict.fromkeys(range(1, 10), 0)
+        for direction in CSPACES:
+            solution_count = dict.fromkeys(SUD_RANGE, 0)
             cell = self
             while True:
                 if cell is None:
                     raise Exception("Cell network is not set up correctly")
                 if cell.solution:
                     solution_count[cell.solution] += 1
-                cell = cell._next[direction]
+                cell = cell.traverse(direction)
                 if cell == self:
                     break
             for i in solution_count:
@@ -187,18 +170,18 @@ class Cell:
         self._remove_potential_in_cspaces(val)
 
     def _remove_potential_in_cspaces(self, val: int) -> None:
-        for direction in self._next:
-            cell = self._next[direction]
+        for direction in CSPACES:
+            cell = self.traverse(direction)
             while cell != self:
                 if cell is None:
                     raise Exception("Cell network is not set up correctly")
                 _ = cell.remove_potential(val)
-                cell = cell._next[direction]
+                cell = cell.traverse(direction)
 
     def initialize(self, val: CellValType) -> None:
         """cell can be initialized to a digit 1 - 9 or to None"""
         logger.debug("Init is called for Cell %d", self.id)
-        self._check_cell_is_legal(val)
+        self._check_cell_param_is_legal(val)
         if val is not None:
             self._initial_value = val
             # Can't  just call _set_solution here as network isn't guarenteed to be set up yet
@@ -207,7 +190,7 @@ class Cell:
         else:
             self._initial_value = None
             self._solved_value = None
-            self._potentials = set(range(1, 10))
+            self._potentials = set(SUD_RANGE)
         self.clear_eliminated()
         self.clear_new_solution()
 
@@ -217,14 +200,12 @@ class Cell:
         rule"""
 
         potential_starting_len = len(self.potentials)
-        for direction in self._next:
-            cell = self._next[direction]
+        for direction in CSPACES:
+            cell = self.traverse(direction)
             while cell != self:
-                if cell is None:
-                    raise Exception("Cell network is not set up correctly")
                 if cell.solution:
                     _ = self.remove_potential(cell.solution)
-                cell = cell._next[direction]
+                cell = cell.traverse(direction)
 
             if not self.potentials:
                 logger.error(
@@ -240,15 +221,13 @@ class Cell:
     def _gather_multiples(self, mode: int, direction: str) -> set[int]:
         """Traverse the space looking for mode number of occurences in potentials i.e. singles, pairs, triplets etc
         Returns a set of those potentials"""
-        pot_count = dict.fromkeys(range(1, 10), 0)
+        pot_count = dict.fromkeys(SUD_RANGE, 0)
         pot_list = set()
         cell = self
         while True:
-            if cell is None:
-                raise Exception("Cell network is not set up correctly")
             for num in cell.potentials:
                 pot_count[num] += 1
-            cell = cell._next[direction]
+            cell = cell.traverse(direction)
             if cell == self:
                 break
         # Analyze potential_count statistics to see if there are any unique (just one) potential
@@ -295,7 +274,7 @@ class Cell:
         for a given constrained space, then that is the solution"""
 
         # Iterate over row, col and square.
-        for direction in self._next:
+        for direction in CSPACES:
             singles_set = self._gather_multiples(1, direction)
             # Now see if any of our cell potentials is in the list, if so set it as the solution
             for num in self.potentials:
@@ -307,7 +286,7 @@ class Cell:
     def _rule_matched_pairs(self) -> bool:
         total_return = False
 
-        for direction in self._next:
+        for direction in CSPACES:
             logger.debug("In rule_matched_pairs, direction is %s", direction)
             pairs_set = self._gather_multiples(2, direction)
             total_num_pairs = len(pairs_set)
@@ -328,7 +307,7 @@ class Cell:
                             raise Exception("Cell network is not set up correctly")
                         if cell.potentials.intersection(combo):
                             matching_cells.append(cell)
-                        cell = cell._next[direction]
+                        cell = cell.traverse(direction)
                         if cell == self:
                             break
                     if len(matching_cells) == subset_num_pairs:
@@ -363,48 +342,38 @@ class SubLine:
         if direction == "row":
             # Build list of overlap by grabbing first 3 of the row
             for _ in range(3):
-                if next is None:
-                    raise Exception("Cell network is not set up correctly")
                 self.overlap.append(next)
-                sq_next = next.snext  # find tail of the first row
-                next = next.rnext
+                sq_next = next.traverse("square")  # find tail of the first row
+                next = next.traverse("row")
             # Next 6 in the row are the non-overlap
             for _ in range(6):
-                if next is None:
-                    raise Exception("Cell network is not set up correctly")
                 self.ln_non_over_lap.append(next)
-                next = next.rnext
+                next = next.traverse("row")
             # Next 6 of the circular NineSquare space is the non-overlap
             for _ in range(6):
-                if sq_next is None:
-                    raise Exception("Cell network is not set up correctly")
                 self.sq_non_over_lap.append(sq_next)
-                sq_next = sq_next.snext
+                sq_next = sq_next.traverse("square")
         else:
+            if direction != "col":
+                raise ValueError
             # Column case
             for _ in range(3):
-                if next is None:
-                    raise Exception("Cell network is not set up correctly")
                 self.overlap.append(next)
-                next = next.cnext
+                next = next.traverse("col")
             # Next 6 in the col are the non-overlap
             for _ in range(6):
-                if next is None:
-                    raise Exception("Cell network is not set up correctly")
                 self.ln_non_over_lap.append(next)
-                next = next.cnext
+                next = next.traverse("col")
             next = base
-            for _ in range(9):
-                if next is None:
-                    raise Exception("Cell network is not set up correctly")
+            for _ in range(SUD_SPACE_SIZE):
                 if next not in self.overlap:
                     self.sq_non_over_lap.append(next)
-                next = next.snext
+                next = next.traverse("square")
 
     def aligned_potentials(self) -> bool:
         progress = False
         # Gather up all of the possible potentials
-        pot_count = dict.fromkeys(range(1, 10), 0)
+        pot_count = dict.fromkeys(SUD_RANGE, 0)
         for cell in self.overlap:
             if cell.solved:
                 continue
@@ -453,21 +422,20 @@ class NineSquare:
         }
         self.cells: list[Cell] = []  # A list of cells to represent a NineSquare
         # Instantiate Cells
-        for i in range(9):
-            # TODO - 9 is hard code everywhere. Should it be a macro?
-            self.cells.append(Cell(self.id * 9 + i))
+        for i in range(SUD_SPACE_SIZE):
+            self.cells.append(Cell(self.id * SUD_SPACE_SIZE + i))
         # Connect up rows of the NineSquare
         for i in (0, 3, 6):
-            self.cells[i].rnext = self.cells[i + 1]
-            self.cells[i + 1].rnext = self.cells[i + 2]
+            self.cells[i].connect("row", self.cells[i + 1])
+            self.cells[i + 1].connect("row", self.cells[i + 2])
         # Connect up columns of the NineSquare
         for i in range(3):
-            self.cells[i].cnext = self.cells[i + 3]
-            self.cells[i + 3].cnext = self.cells[i + 6]
+            self.cells[i].connect("col", self.cells[i + 3])
+            self.cells[i + 3].connect("col", self.cells[i + 6])
         # Connect up the NineSquare Loop
         for i in range(8):
-            self.cells[i].snext = self.cells[i + 1]
-        self.cells[8].snext = self.cells[0]
+            self.cells[i].connect("square", self.cells[i + 1])
+        self.cells[8].connect("square", self.cells[0])
 
     def connect_sublines(self):
         self.sublines = []
@@ -485,7 +453,7 @@ class NineSquare:
                 self.sublines.append(SubLine(cell, "row"))
 
     def initialize(self, vals: NineSquareValType) -> None:
-        for i in range(9):
+        for i in range(SUD_SPACE_SIZE):
             self.cells[i].initialize(vals[i])
 
     @property
@@ -498,7 +466,7 @@ class NineSquare:
     @property
     def solutions(self) -> NineSquareValType:
         sols = []
-        for i in range(9):
+        for i in range(SUD_SPACE_SIZE):
             sols.append(self.cells[i].solution)
         return tuple(sols)
 
@@ -509,19 +477,19 @@ class NineSquare:
 
     def attach_row(self, other: "NineSquare") -> None:
         """Connect this NineSquare to another to the right"""
-        self.cells[2].rnext = other.cell(0, 0)
-        self.cells[5].rnext = other.cell(1, 0)
-        self.cells[8].rnext = other.cell(2, 0)
+        self.cells[2].connect("row", other.cell(0, 0))
+        self.cells[5].connect("row", other.cell(1, 0))
+        self.cells[8].connect("row", other.cell(2, 0))
 
     def attach_col(self, other: "NineSquare") -> None:
         """Connect this NineSquare to another below"""
-        self.cells[6].cnext = other.cell(0, 0)
-        self.cells[7].cnext = other.cell(0, 1)
-        self.cells[8].cnext = other.cell(0, 2)
+        self.cells[6].connect("col", other.cell(0, 0))
+        self.cells[7].connect("col", other.cell(0, 1))
+        self.cells[8].connect("col", other.cell(0, 2))
 
     def check_consistency(self) -> bool:
         total_result = True
-        for i in range(9):
+        for i in range(SUD_SPACE_SIZE):
             total_result &= self.cells[i].check_consistency()
         return total_result
 
@@ -534,7 +502,7 @@ class NineSquare:
             self.rules[rule]()
         else:
             # Cell level rule
-            for i in range(9):
+            for i in range(SUD_SPACE_SIZE):
                 total_result |= self.cells[i].run_rule(rule)
         logger.debug(
             "NineSquare %d completing %s, result is %d",
@@ -579,7 +547,7 @@ class Sudoku:
         self._last_rule_progressed = False
         self.history = History()
         self.ns: list[NineSquare] = []
-        for i in range(9):
+        for i in range(SUD_SPACE_SIZE):
             self.ns.append(NineSquare(i))
         # Connect up the rows
         for i in (0, 3, 6):
@@ -609,7 +577,7 @@ class Sudoku:
         else:
             if not history_mode:
                 self.history.clear()
-            for i in range(9):
+            for i in range(SUD_SPACE_SIZE):
                 self.ns[i].initialize(self.init_val[i])
             logger.info("Sudoku Class finished initialization")
         self._initial_state = True
@@ -633,7 +601,7 @@ class Sudoku:
     @property
     def solutions(self) -> SudokuValType:
         sols = []
-        for i in range(9):
+        for i in range(SUD_SPACE_SIZE):
             sols.append(self.ns[i].solutions)
         return tuple(sols)
 
@@ -642,7 +610,7 @@ class Sudoku:
     # and consistency_check as a part of that algorithm. Needs some thought
     def check_consistency(self) -> bool:
         total_result = True
-        for i in range(9):
+        for i in range(SUD_SPACE_SIZE):
             total_result &= self.ns[i].check_consistency()
         return total_result
 
