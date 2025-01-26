@@ -8,7 +8,7 @@
 # Linux Compile command: python3 -m nuitka sudsolver.py
 
 from PySide6.QtWidgets import QApplication
-from sudoku_gui import SSolveMain
+from gui.sudoku_gui import SSolveMain
 import sudoku
 import yaml
 from pathlib import Path
