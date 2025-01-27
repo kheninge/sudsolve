@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import QPropertyAnimation, Qt, QRect
 from PySide6.QtGui import QShortcut, QKeySequence
+from gui.fixed_size_control import FixedSizeControl
 from sudoku import Sudoku, SudokuValType, Cell
 
 
@@ -28,23 +29,23 @@ from sudoku import Sudoku, SudokuValType, Cell
 
 class SSolveMain(QMainWindow):
     def __init__(
-        self, app: QApplication, sudoku: Sudoku, puzzles_dict: dict[str, SudokuValType]
+        self,
+        app: QApplication,
+        sizer: FixedSizeControl,
+        sudoku: Sudoku,
+        puzzles_dict: dict[str, SudokuValType],
     ) -> None:
         super().__init__()
 
         self.app = app
         self.sudoku = sudoku
         # Determine available screen size so we can make the sudoku app fit
-        screens = self.app.screens()
-        geometry = screens[0].availableGeometry()
-        self.full_width = geometry.width()
-        self.full_height = geometry.height()
-        self.main_width = int(self.full_width * 0.40)
+        self.sizer = sizer
 
         # Primary Components of Main Window
         self.puzzle_widget = SudokuView(sudoku, self)
-        self.right_docker = RightDocker(sudoku, self)
-        self.control_widget = ControlsView(sudoku, self, puzzles_dict)
+        self.right_docker = RightDocker(sudoku, self, sizer)
+        self.control_widget = ControlsView(sudoku, self, puzzles_dict, sizer)
 
         self._define_layout()
         self._configure_mainwindow()
@@ -55,7 +56,7 @@ class SSolveMain(QMainWindow):
         main_layout.addWidget(self.puzzle_widget)
         main_layout.addWidget(self.control_widget)
         main_widget = QWidget()
-        main_widget.setFixedWidth(self.main_width)
+        main_widget.setFixedWidth(self.sizer.app_width)
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.right_docker)
@@ -236,15 +237,16 @@ class ControlsView(QWidget):
         sudoku: Sudoku,
         mainwindow: SSolveMain,
         puzzles_dict: dict[str, SudokuValType],
+        sizer: FixedSizeControl,
     ) -> None:
         super().__init__()
 
         self.sudoku = sudoku
         self.main = mainwindow
         self.puzzles_dict = puzzles_dict
-        self.control_height = self.main.main_width / 30
-        self.control_width = self.main.main_width / 12
-        self.rule_width = int(self.main.main_width / 7)
+        self.control_height = sizer.app_width / 30
+        self.control_width = sizer.app_width / 12
+        self.rule_width = int(sizer.app_width / 7)
 
         # Create the Control and Rule Buttons
         self.controls = {
@@ -354,10 +356,13 @@ class ControlsView(QWidget):
 
 
 class RightDocker(QDockWidget):
-    def __init__(self, sudoku: Sudoku, main: SSolveMain) -> None:
+    def __init__(
+        self, sudoku: Sudoku, main: SSolveMain, sizer: FixedSizeControl
+    ) -> None:
         super().__init__()
 
         self.main = main
+        self.sizer = sizer
         self.history_widget = HistoryWidget(sudoku, main)
         self.setWidget(self.history_widget)
         self.setFeatures(QDockWidget.DockWidgetFeature.NoDockWidgetFeatures)
@@ -372,7 +377,7 @@ class RightDocker(QDockWidget):
         else:
             self.hide()
             self.hidden = True
-            self.width = self.main.full_width / 5
+            self.width = self.sizer.app_width / 5
 
 
 class HistoryWidget(QWidget):

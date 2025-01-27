@@ -8,12 +8,14 @@
 # Linux Compile command: python3 -m nuitka sudsolver.py
 
 from PySide6.QtWidgets import QApplication
+from gui.fixed_size_control import FixedSizeControl
 from gui.sudoku_gui import SSolveMain
 import sudoku
 import yaml
 from pathlib import Path
 
 PUZZLE_YAML_FILE = "sudoku.yaml"
+WIDTH_RATIO = 0.4
 
 
 def main():
@@ -27,7 +29,8 @@ def main():
     solver = sudoku.Sudoku()
     # Gui
     app = QApplication()
-    window = SSolveMain(app, solver, puzzles_ninesquare_fmt)
+    sizer = FixedSizeControl(app, WIDTH_RATIO)
+    window = SSolveMain(app, sizer, solver, puzzles_ninesquare_fmt)
     window.show()
     app.exec()
 
