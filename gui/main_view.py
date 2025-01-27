@@ -10,6 +10,7 @@ from gui.fixed_size_control import FixedSizeControl
 from gui.history_docker import RightDocker
 from gui.controls_view import ControlsView
 from gui.sudoku_game_views import SudokuView
+from gui.update_controller import UpdateController
 from sudoku import Sudoku, SudokuValType
 
 
@@ -26,26 +27,24 @@ class SSolveMain(QMainWindow):
     def __init__(
         self,
         app: QApplication,
-        sizer: FixedSizeControl,
+        sizes: FixedSizeControl,
         sudoku: Sudoku,
         puzzles_dict: dict[str, SudokuValType],
     ) -> None:
         super().__init__()
 
         self.app = app
-        self.sudoku = sudoku
-        # Determine available screen size so we can make the sudoku app fit
-        self.sizer = sizer
+        self.sizes = sizes
 
-        # Primary Components of Main Window
-        self.puzzle_widget = SudokuView(sudoku)
-        self.right_docker = RightDocker(sudoku, sizer, self.update_gui)
+        updater = UpdateController()
+        # Instantiate Primary Components of Main Window
+        self.puzzle_widget = SudokuView(sudoku, updater)
+        self.right_docker = RightDocker(sudoku, sizes, updater)
         self.control_widget = ControlsView(
-            sudoku, app, puzzles_dict, sizer, self.update_gui, self.right_docker
+            sudoku, app, puzzles_dict, sizes, updater, self.right_docker
         )
 
         self._define_layout()
-        self._configure_mainwindow()
         self._define_shortcuts()
 
     def _define_layout(self) -> None:
@@ -53,13 +52,10 @@ class SSolveMain(QMainWindow):
         main_layout.addWidget(self.puzzle_widget)
         main_layout.addWidget(self.control_widget)
         main_widget = QWidget()
-        main_widget.setFixedWidth(self.sizer.app_width)
+        main_widget.setFixedWidth(self.sizes.app_width)
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.right_docker)
-
-    def _configure_mainwindow(self) -> None:
-        self.setWindowTitle("Kurt's Suduko Logical Rule Solver")
 
     def _define_shortcuts(self) -> None:
         shortcut_quit = QShortcut(QKeySequence("q"), self)
@@ -89,9 +85,3 @@ class SSolveMain(QMainWindow):
         )
         shortcut_hist_back = QShortcut(QKeySequence("h"), self)
         shortcut_hist_back.activated.connect(self.right_docker.history_widget.back)
-
-    def update_gui(self) -> None:
-        """The gui gets updated explicitly. This is the function that updates the entire gui. It should be called
-        after anything that updates state such as a rule button press or loading a new puzzle"""
-        self.puzzle_widget.update_sudoku()
-        self.control_widget.update_controls()

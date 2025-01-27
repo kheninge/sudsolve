@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QFrame,
 )
 from PySide6.QtCore import Qt
+from gui.update_controller import UpdateController
 from gui.fixed_size_control import FixedSizeControl
 from gui.history_docker import RightDocker
 from sudoku import Sudoku, SudokuValType
@@ -24,13 +25,13 @@ class ControlsView(QWidget):
         app: QApplication,
         puzzles_dict: dict[str, SudokuValType],
         sizer: FixedSizeControl,
-        update_gui,
+        updater: UpdateController,
         docker: RightDocker,
     ) -> None:
         super().__init__()
 
         self.sudoku = sudoku
-        self.update_gui = update_gui
+        self.updater = updater
         self.app = app
         self.right_docker = docker
         self.puzzles_dict = puzzles_dict
@@ -38,6 +39,7 @@ class ControlsView(QWidget):
         self.control_width = sizer.app_width / 12
         self.rule_width = int(sizer.app_width / 7)
 
+        updater.add_update(self.update_controls)
         # Create the Control and Rule Buttons
         self.controls = {
             "new_puzzle": QComboBox(),
@@ -133,16 +135,16 @@ class ControlsView(QWidget):
 
     def initialize(self) -> None:
         self.sudoku.initialize()
-        self.update_gui()
+        self.updater.call_updates()
 
     def load_puzzle(self, t: str) -> None:
         self.sudoku.load(self.puzzles_dict[t])
         self.sudoku.initialize()
-        self.update_gui()
+        self.updater.call_updates()
 
     def run_rule(self, rule: str) -> None:
         self.sudoku.run_rule(rule)
-        self.update_gui()
+        self.updater.call_updates()
 
 
 class HLine(QFrame):

@@ -6,15 +6,18 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 from gui.fixed_size_control import FixedSizeControl
+from gui.update_controller import UpdateController
 from sudoku import Sudoku
 
 
 class RightDocker(QDockWidget):
-    def __init__(self, sudoku: Sudoku, sizer: FixedSizeControl, update_gui) -> None:
+    def __init__(
+        self, sudoku: Sudoku, sizer: FixedSizeControl, updater: UpdateController
+    ) -> None:
         super().__init__()
 
         self.sizer = sizer
-        self.history_widget = HistoryWidget(sudoku, update_gui)
+        self.history_widget = HistoryWidget(sudoku, updater)
         self.setWidget(self.history_widget)
         self.setFeatures(QDockWidget.DockWidgetFeature.NoDockWidgetFeatures)
         self.hide()
@@ -32,11 +35,11 @@ class RightDocker(QDockWidget):
 
 
 class HistoryWidget(QWidget):
-    def __init__(self, sudoku: Sudoku, update_gui) -> None:
+    def __init__(self, sudoku: Sudoku, updater: UpdateController) -> None:
         super().__init__()
 
         self.sudoku = sudoku
-        self.update_gui = update_gui
+        self.updater = updater
         self.right_button = QPushButton("Forward (l)")
         self.left_button = QPushButton("Back (h)")
         self.history_log = QWidget()
@@ -54,8 +57,8 @@ class HistoryWidget(QWidget):
 
     def back(self):
         self.sudoku.replay_history("back")
-        self.update_gui()
+        self.updater.call_updates()
 
     def forward(self):
         self.sudoku.replay_history("forward")
-        self.update_gui()
+        self.updater.call_updates()

@@ -16,6 +16,7 @@ from pathlib import Path
 
 PUZZLE_YAML_FILE = "sudoku.yaml"
 WIDTH_RATIO = 0.4
+TITLE = "Kurt's Suduko Logical Rule Solver"
 
 
 def main():
@@ -31,6 +32,7 @@ def main():
     app = QApplication()
     sizer = FixedSizeControl(app, WIDTH_RATIO)
     window = SSolveMain(app, sizer, solver, puzzles_ninesquare_fmt)
+    window.setWindowTitle(TITLE)
     window.show()
     app.exec()
 
