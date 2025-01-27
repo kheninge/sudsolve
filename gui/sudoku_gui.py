@@ -1,21 +1,20 @@
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
-    QDockWidget,
-    QGridLayout,
     QMainWindow,
     QPushButton,
-    QStackedWidget,
     QWidget,
     QHBoxLayout,
     QVBoxLayout,
     QLabel,
     QFrame,
 )
-from PySide6.QtCore import QPropertyAnimation, Qt, QRect
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QShortcut, QKeySequence
 from gui.fixed_size_control import FixedSizeControl
-from sudoku import Sudoku, SudokuValType, Cell
+from gui.history_docker import RightDocker
+from gui.sudoku_game_views import SudokuView
+from sudoku import Sudoku, SudokuValType
 
 
 # TODO:
@@ -43,9 +42,11 @@ class SSolveMain(QMainWindow):
         self.sizer = sizer
 
         # Primary Components of Main Window
-        self.puzzle_widget = SudokuView(sudoku, self)
-        self.right_docker = RightDocker(sudoku, self, sizer)
-        self.control_widget = ControlsView(sudoku, self, puzzles_dict, sizer)
+        self.puzzle_widget = SudokuView(sudoku)
+        self.right_docker = RightDocker(sudoku, sizer, self.update_gui)
+        self.control_widget = ControlsView(
+            sudoku, self, app, puzzles_dict, sizer, self.update_gui
+        )
 
         self._define_layout()
         self._configure_mainwindow()
@@ -100,129 +101,6 @@ class SSolveMain(QMainWindow):
         self.control_widget.update_controls()
 
 
-class SudokuView(QWidget):
-    def __init__(self, sudoku: Sudoku, main) -> None:
-        super().__init__()
-        self.sudoku = sudoku
-        self.ns = []  # Keep a list of nine-squares
-
-        # Suduko Grid Layout
-        layout = QGridLayout()
-        for i in range(3):
-            for j in range(3):
-                widget = NineSquareView(main, self)
-                self.ns.append(widget)
-                layout.addWidget(widget, i, j)
-        self.setLayout(layout)
-
-    def update_sudoku(self) -> None:
-        for i, ns in enumerate(self.ns):
-            for j, cell in enumerate(ns.cells):
-                cell.update_cell(self.sudoku.ns[i].cells[j])
-
-
-class NineSquareView(QWidget):
-    def __init__(self, main, parent) -> None:
-        super().__init__(parent)
-
-        # Create layout of 9 widgets to represent cells in a nine-square
-        self.cells = []  # track the widgets in this list
-        layout = QGridLayout()
-        for i in range(3):
-            for j in range(3):
-                cell_widget = CellWidget(main, self)
-                self.cells.append(cell_widget)
-                layout.addWidget(cell_widget, i, j)
-        self.setLayout(layout)
-
-
-class CellWidget(QStackedWidget):
-    def __init__(self, main, parent) -> None:
-        super().__init__(parent)
-        self.parent = parent
-        cell_dim = self.width()
-        # Hints cells are kind of squished to the left so 1/2 just gives more room in the case of a 2 pixel remainder
-        hint_dim = int(cell_dim * 0.40)
-        self.setFixedHeight(cell_dim)
-        normal_font = int(cell_dim * 0.6)
-        update_font = int(cell_dim * 0.15)
-        self.style_normal_background = (
-            f" border: 1px solid black; font-size: {normal_font}px;"
-        )
-        self.style_yellow_background = f"background-color: yellow; border: 1px solid black; font-size: {normal_font}px;"
-        self.style_hints_normal_no_border = (
-            f"border: none; color: gray; font-size: {update_font}px;"
-        )
-        self.style_hints_yellow_no_border = f"background-color: yellow;border: none; color: gray; font-size: {update_font}px;"
-        self.hint_wrapper = QWidget()
-        self.hint_wrapper.setStyleSheet(self.style_normal_background)
-        self.hint_view = HintsWidget(main, hint_dim)
-        self.hint_view.setParent(self.hint_wrapper)
-        self.hint_view.setStyleSheet(self.style_hints_normal_no_border)
-        self.solved_view = QLabel()
-        self.solved_view.setStyleSheet(self.style_normal_background)
-        self.solved_view.setAlignment(
-            Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter
-        )
-        self.addWidget(self.hint_wrapper)
-        self.addWidget(self.solved_view)
-        self.setCurrentIndex(1)
-
-    def update_cell(self, cell_model: Cell):
-        if cell_model.solved:
-            val = str(cell_model.solution)  # Labels take strings not int
-            self.solved_view.setText(val)
-            if cell_model.new_solution:
-                self.solved_view.setStyleSheet(self.style_yellow_background)
-            else:
-                self.solved_view.setStyleSheet(self.style_normal_background)
-            self.setCurrentIndex(1)
-        else:
-            self.hint_wrapper.setStyleSheet(self.style_normal_background)
-            self.hint_view.setStyleSheet(self.style_hints_normal_no_border)
-            for i in range(1, 10):
-                if i in cell_model.potentials:
-                    self.hint_view.hint[i - 1].setText(str(i))
-                else:
-                    self.hint_view.hint[i - 1].setText("")
-            for h in self.hint_view.hint:
-                h.setStyleSheet(self.style_hints_normal_no_border)
-            for e in cell_model.eliminated:
-                self.hint_view.hint[e - 1].setStyleSheet(
-                    self.style_hints_yellow_no_border
-                )
-            self.setCurrentIndex(0)
-
-
-class HintsWidget(QWidget):
-    style_hints_normal_no_border = "border: none; "
-    style_hints_yellow_no_border = "background-color: yellow;border: none; "
-
-    def __init__(self, main: SSolveMain, dim: int) -> None:
-        super().__init__()
-        self.main = main
-        self.hint = []
-        rows = []
-        for _ in range(9):
-            h = QLabel(self)
-            h.setFixedWidth(dim)
-            self.hint.append(h)
-        for _ in range(3):
-            rows.append(QHBoxLayout())
-        for row_index, row in enumerate(rows):
-            for i in range(3):
-                row.addWidget(self.hint[row_index * 3 + i])
-        hint_layout = QVBoxLayout()
-        for i in range(3):
-            hint_layout.addLayout(rows[i])
-        self.setLayout(hint_layout)
-        for h in self.hint:
-            h.setStyleSheet(self.style_hints_normal_no_border)
-            h.setAlignment(
-                Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter
-            )
-
-
 class ControlsView(QWidget):
     # Below is original hard coded values.
     # control_height = 50
@@ -236,13 +114,17 @@ class ControlsView(QWidget):
         self,
         sudoku: Sudoku,
         mainwindow: SSolveMain,
+        app: QApplication,
         puzzles_dict: dict[str, SudokuValType],
         sizer: FixedSizeControl,
+        update_gui,
     ) -> None:
         super().__init__()
 
         self.sudoku = sudoku
         self.main = mainwindow
+        self.update_gui = update_gui
+        self.app = app
         self.puzzles_dict = puzzles_dict
         self.control_height = sizer.app_width / 30
         self.control_width = sizer.app_width / 12
@@ -305,7 +187,7 @@ class ControlsView(QWidget):
         self.setLayout(layout)
 
         ## Connect Up Controls and Rules Buttons
-        self.controls["close"].clicked.connect(self.main.app.quit)
+        self.controls["close"].clicked.connect(self.app.quit)
         self.controls["start"].clicked.connect(self.initialize)
         self.controls["new_puzzle"].textActivated.connect(self.load_puzzle)
         self.controls["history"].clicked.connect(self.main.right_docker.toggle)
@@ -343,71 +225,16 @@ class ControlsView(QWidget):
 
     def initialize(self) -> None:
         self.sudoku.initialize()
-        self.main.update_gui()
+        self.update_gui()
 
     def load_puzzle(self, t: str) -> None:
         self.sudoku.load(self.puzzles_dict[t])
         self.sudoku.initialize()
-        self.main.update_gui()
+        self.update_gui()
 
     def run_rule(self, rule: str) -> None:
         self.sudoku.run_rule(rule)
-        self.main.update_gui()
-
-
-class RightDocker(QDockWidget):
-    def __init__(
-        self, sudoku: Sudoku, main: SSolveMain, sizer: FixedSizeControl
-    ) -> None:
-        super().__init__()
-
-        self.main = main
-        self.sizer = sizer
-        self.history_widget = HistoryWidget(sudoku, main)
-        self.setWidget(self.history_widget)
-        self.setFeatures(QDockWidget.DockWidgetFeature.NoDockWidgetFeatures)
-        self.hide()
-        self.hidden = True
-
-    def toggle(self):
-        if self.hidden:
-            self.show()
-            self.hidden = False
-            self.width = 0
-        else:
-            self.hide()
-            self.hidden = True
-            self.width = self.sizer.app_width / 5
-
-
-class HistoryWidget(QWidget):
-    def __init__(self, sudoku: Sudoku, main: SSolveMain) -> None:
-        super().__init__()
-
-        self.sudoku = sudoku
-        self.main = main
-        self.right_button = QPushButton("Forward (l)")
-        self.left_button = QPushButton("Back (h)")
-        self.history_log = QWidget()
-
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(self.left_button)
-        button_layout.addWidget(self.right_button)
-        layout = QVBoxLayout()
-        layout.addWidget(self.history_log)
-        layout.addLayout(button_layout)
-        self.setLayout(layout)
-
-        self.right_button.clicked.connect(self.forward)
-        self.left_button.clicked.connect(self.back)
-
-    def back(self):
-        self.sudoku.replay_history("back")
-        self.main.update_gui()
-
-    def forward(self):
-        self.sudoku.replay_history("forward")
-        self.main.update_gui()
+        self.update_gui()
 
 
 class HLine(QFrame):
