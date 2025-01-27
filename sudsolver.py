@@ -9,7 +9,7 @@
 
 from PySide6.QtWidgets import QApplication
 from gui.fixed_size_control import FixedSizeControl
-from gui.sudoku_gui import SSolveMain
+from gui.main_view import SSolveMain
 import sudoku
 import yaml
 from pathlib import Path
