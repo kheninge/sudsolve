@@ -44,44 +44,29 @@ class SSolveMain(QMainWindow):
             sudoku, app, puzzles_dict, sizes, updater, self.right_docker
         )
 
-        self._define_layout()
-        self._define_shortcuts()
-
-    def _define_layout(self) -> None:
-        main_layout = QVBoxLayout()
-        main_layout.addWidget(self.puzzle_widget)
-        main_layout.addWidget(self.control_widget)
-        main_widget = QWidget()
-        main_widget.setFixedWidth(self.sizes.app_width)
-        main_widget.setLayout(main_layout)
-        self.setCentralWidget(main_widget)
+        # Define Layout
+        layout = QVBoxLayout()
+        layout.addWidget(self.puzzle_widget)
+        layout.addWidget(self.control_widget)
+        widget = QWidget()
+        widget.setFixedWidth(self.sizes.app_width)
+        widget.setLayout(layout)
+        self.setCentralWidget(widget)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.right_docker)
 
-    def _define_shortcuts(self) -> None:
-        shortcut_quit = QShortcut(QKeySequence("q"), self)
-        shortcut_quit.activated.connect(self.app.quit)
-        shortcut_exit = QShortcut(QKeySequence("x"), self)
-        shortcut_exit.activated.connect(self.app.quit)
-        shortcut_restart = QShortcut(QKeySequence("r"), self)
-        shortcut_restart.activated.connect(self.control_widget.initialize)
-        shortcut_eto = QShortcut(QKeySequence("1"), self)
-        shortcut_eto.activated.connect(
-            lambda: self.control_widget.run_rule("elimination_to_one")
-        )
-        shortcut_spl = QShortcut(QKeySequence("2"), self)
-        shortcut_spl.activated.connect(
-            lambda: self.control_widget.run_rule("single_possible_location")
-        )
-        shortcut_spl = QShortcut(QKeySequence("4"), self)
-        shortcut_spl.activated.connect(
-            lambda: self.control_widget.run_rule("matched_pairs")
-        )
-        shortcut_hist_show = QShortcut(QKeySequence("d"), self)
-        shortcut_hist_show.activated.connect(self.right_docker.toggle)
-
-        shortcut_hist_forward = QShortcut(QKeySequence("l"), self)
-        shortcut_hist_forward.activated.connect(
-            self.right_docker.history_widget.forward
-        )
-        shortcut_hist_back = QShortcut(QKeySequence("h"), self)
-        shortcut_hist_back.activated.connect(self.right_docker.history_widget.back)
+        # Define Shortcuts
+        shortcuts = {
+            "q": self.app.quit,
+            "x": self.app.quit,
+            "r": self.control_widget.initialize,
+            "d": self.right_docker.toggle,
+            "l": self.right_docker.history_widget.forward,
+            "h": self.right_docker.history_widget.back,
+            "0": lambda: self.control_widget.run_rule("update_potentials"),
+            "1": lambda: self.control_widget.run_rule("elimination_to_one"),
+            "2": lambda: self.control_widget.run_rule("single_possible_location"),
+            "3": lambda: self.control_widget.run_rule("aligned_potentials"),
+            "4": lambda: self.control_widget.run_rule("matched_pairs"),
+        }
+        for k, func in shortcuts.items():
+            QShortcut(QKeySequence(k), self).activated.connect(func)
