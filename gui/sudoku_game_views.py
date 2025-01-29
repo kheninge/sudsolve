@@ -60,11 +60,11 @@ class CellWidget(QStackedWidget):
         self.style_normal_background = (
             f" border: 1px solid black; font-size: {normal_font}px;"
         )
-        self.style_yellow_background = f"background-color: yellow; border: 1px solid black; font-size: {normal_font}px;"
+        self.style_yellow_background = f"background-color: #f4f8b2; border: 1px solid black; font-size: {normal_font}px;"
         self.style_hints_normal_no_border = (
             f"border: none; color: gray; font-size: {update_font}px;"
         )
-        self.style_hints_yellow_no_border = f"background-color: yellow;border: none; color: gray; font-size: {update_font}px;"
+        self.style_hints_yellow_no_border = f"background-color: #f4f8b2;border: none; color: gray; font-size: {update_font}px;"
         self.hint_wrapper = QWidget()
         self.hint_wrapper.setStyleSheet(self.style_normal_background)
         self.hint_view = HintsWidget(hint_dim)
@@ -107,7 +107,7 @@ class CellWidget(QStackedWidget):
 
 class HintsWidget(QWidget):
     style_hints_normal_no_border = "border: none; "
-    style_hints_yellow_no_border = "background-color: yellow;border: none; "
+    style_hints_yellow_no_border = "background-color: #f4f8b2;border: none; "
 
     def __init__(self, dim: int) -> None:
         super().__init__()
