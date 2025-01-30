@@ -7,16 +7,12 @@
 #
 # Linux Compile command: python3 -m nuitka sudsolver.py
 
-from PySide6.QtWidgets import QApplication
-from gui.fixed_size_control import FixedSizeControl
-from gui.main_view import SSolveMain
+from gui.gui_top import GuiTop
 import sudoku
 import yaml
 from pathlib import Path
 
 PUZZLE_YAML_FILE = "sudoku.yaml"
-WIDTH_RATIO = 0.4
-TITLE = "Kurt's Suduko Logical Rule Solver"
 
 
 def main():
@@ -26,15 +22,11 @@ def main():
         stored_puzzles = yaml.safe_load(file)
     puzzles_ninesquare_fmt = convert_to_ns_format(stored_puzzles)
 
-    # Model
+    # Model/Control
     solver = sudoku.Sudoku()
     # Gui
-    app = QApplication()
-    sizer = FixedSizeControl(app, WIDTH_RATIO)
-    window = SSolveMain(app, sizer, solver, puzzles_ninesquare_fmt)
-    window.setWindowTitle(TITLE)
-    window.show()
-    app.exec()
+    gui = GuiTop(solver, puzzles_ninesquare_fmt)
+    gui.start()
 
 
 def convert_to_ns_format(puzzles: dict) -> dict[str, sudoku.SudokuValType]:

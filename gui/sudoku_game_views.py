@@ -7,17 +7,15 @@ from PySide6.QtWidgets import (
     QLabel,
 )
 from PySide6.QtCore import Qt
-from gui.update_controller import UpdateController
 from sudoku import Sudoku, Cell
 
 
 class SudokuView(QWidget):
-    def __init__(self, sudoku: Sudoku, updater: UpdateController) -> None:
+    def __init__(self, sudoku: Sudoku) -> None:
         super().__init__()
         self.sudoku = sudoku
         self.ns = []  # Keep a list of nine-squares
 
-        updater.add_update(self.update_sudoku)
         # Suduko Grid Layout
         layout = QGridLayout()
         for i in range(3):

@@ -1,6 +1,6 @@
 import logging
 import itertools
-from typing import TypeAlias
+from typing import TypeAlias, Literal
 
 logger = logging.getLogger(__name__)
 
@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 CellValType: TypeAlias = int | None
 NineSquareValType: TypeAlias = tuple[CellValType, ...]
 SudokuValType: TypeAlias = tuple[NineSquareValType, ...]
+DirectionType: TypeAlias = Literal["row", "col", "square"]
 
 
 # TODO:
@@ -41,7 +42,7 @@ class Cell:
         self._new_solution: bool = False
         self._potentials: set[int] = set(SUD_RANGE)
         self._eliminated = set()
-        self._next = dict.fromkeys(CSPACES)
+        self._next: dict[DirectionType, Cell | None] = dict.fromkeys(CSPACES)
         self.rules = {
             "update_potentials": self._update_potentials,
             "eliminate_visible": self._rule_elimination,
@@ -98,11 +99,13 @@ class Cell:
     def clear_new_solution(self) -> None:
         self._new_solution = False
 
-    def connect(self, direction: str, cell: "Cell") -> None:
+    def connect(self, direction: DirectionType, cell: "Cell") -> None:
         self._next[direction] = cell
 
-    def traverse(self, direction: str) -> "Cell":
-        return self._next[direction]
+    def traverse(self, direction: DirectionType) -> "Cell":
+        if self._next[direction] is None:
+            raise Exception("Cell network is not set up correctly")
+        return self._next[direction]  # type: ignore
 
     @property
     def solution(self) -> CellValType:
@@ -218,7 +221,7 @@ class Cell:
         else:
             return False
 
-    def _gather_multiples(self, mode: int, direction: str) -> set[int]:
+    def _gather_multiples(self, mode: int, direction: DirectionType) -> set[int]:
         """Traverse the space looking for mode number of occurences in potentials i.e. singles, pairs, triplets etc
         Returns a set of those potentials"""
         pot_count = dict.fromkeys(SUD_RANGE, 0)
@@ -340,6 +343,7 @@ class SubLine:
 
         next = base
         if direction == "row":
+            sq_next = base
             # Build list of overlap by grabbing first 3 of the row
             for _ in range(3):
                 self.overlap.append(next)
