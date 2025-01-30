@@ -31,7 +31,7 @@ class GuiTop:
         self.updater = UpdateController()
         # Instantiate GUI Pieces
         self.puzzle_widget = SudokuView(self.sudoku)
-        self.right_docker = RightDocker(self.sudoku, self.sizes)
+        self.right_docker = RightDocker(self.sudoku)
         self.control_widget = ControlsView(
             self.sudoku,
             self.puzzles_dict,
@@ -102,6 +102,7 @@ class GuiTop:
     def _connect_updates(self):
         self.updater.updated.connect(self.control_widget.update_controls)
         self.updater.updated.connect(self.puzzle_widget.update_sudoku)
+        self.updater.updated.connect(self.right_docker.history_widget.update_history)
 
     def initialize(self) -> None:
         self.sudoku.initialize()

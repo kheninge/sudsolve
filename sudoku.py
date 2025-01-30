@@ -675,6 +675,13 @@ class Sudoku:
             i += 1
         return progress
 
+    def delete_current_history_event(self) -> bool:
+        if self.history.at_beginning:
+            # Already at earliest point, do nothing
+            pass
+        self.history.delete_current()
+        return self.replay_history("back")
+
 
 class History:
     def __init__(self) -> None:
@@ -696,6 +703,17 @@ class History:
 
     def forward(self) -> None:
         self.curr_ptr += 1
+
+    def delete_current(self) -> None:
+        self.rule_queue.pop(self.curr_ptr)
+        self.tail_ptr -= 1
+
+    def print_out(self) -> list[str]:
+        out = []
+        for i, rule in enumerate(self.rule_queue):
+            curr_prefix = "c-> " if self.curr_ptr == i else "    "
+            out.insert(i, curr_prefix + rule)
+        return out
 
     @property
     def at_end(self) -> bool:

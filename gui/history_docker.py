@@ -4,31 +4,23 @@ from PySide6.QtWidgets import (
     QWidget,
     QHBoxLayout,
     QVBoxLayout,
+    QLabel,
 )
 from gui.fixed_size_control import FixedSizeControl
 from sudoku import Sudoku
 
 
 class RightDocker(QDockWidget):
-    def __init__(self, sudoku: Sudoku, sizer: FixedSizeControl) -> None:
+    def __init__(self, sudoku: Sudoku) -> None:
         super().__init__()
 
-        self.sizer = sizer
         self.history_widget = HistoryWidget(sudoku)
         self.setWidget(self.history_widget)
         self.setFeatures(QDockWidget.DockWidgetFeature.NoDockWidgetFeatures)
-        self.hide()
-        self.hidden = True
+        self.setVisible(False)
 
     def toggle(self):
-        if self.hidden:
-            self.show()
-            self.hidden = False
-            self.width = 0
-        else:
-            self.hide()
-            self.hidden = True
-            self.width = self.sizer.app_width / 5
+        self.setVisible(not self.isVisible())
 
 
 class HistoryWidget(QWidget):
@@ -38,7 +30,7 @@ class HistoryWidget(QWidget):
         self.sudoku = sudoku
         self.right_button = QPushButton("Forward (l)")
         self.left_button = QPushButton("Back (h)")
-        self.history_log = QWidget()
+        self.history_log = QLabel()
 
         button_layout = QHBoxLayout()
         button_layout.addWidget(self.left_button)
@@ -47,3 +39,7 @@ class HistoryWidget(QWidget):
         layout.addWidget(self.history_log)
         layout.addLayout(button_layout)
         self.setLayout(layout)
+
+    def update_history(self) -> None:
+        text = "\n".join(self.sudoku.history.print_out())
+        self.history_log.setText(text)
