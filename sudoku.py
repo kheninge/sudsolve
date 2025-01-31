@@ -503,7 +503,7 @@ class NineSquare:
         total_result = False
         if rule in self.rules.keys():
             # NineSquare level rule
-            self.rules[rule]()
+            total_result = self.rules[rule]()
         else:
             # Cell level rule
             for i in range(SUD_SPACE_SIZE):
