@@ -57,7 +57,7 @@ class GuiTop:
             "q": self.app.quit,
             "x": self.app.quit,
             "r": self.initialize,
-            "d": self.right_docker.toggle,
+            "d": self.toggle_history_dock,
             "l": self.forward,
             "h": self.back,
             "0": lambda: self.run_rule("update_potentials"),
@@ -77,7 +77,7 @@ class GuiTop:
             self.load_puzzle
         )
         self.control_widget.controls["history"].clicked.connect(
-            self.right_docker.toggle
+            self.toggle_history_dock
         )
         # Rules Buttons
         self.control_widget.rules["elimination"].clicked.connect(
@@ -127,3 +127,7 @@ class GuiTop:
 
     def start(self):
         self.app.exec()
+
+    def toggle_history_dock(self):
+        self.right_docker.toggle()
+        self.main_widget.adjustSize()
