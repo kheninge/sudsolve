@@ -28,8 +28,8 @@ class HistoryWidget(QWidget):
         super().__init__()
 
         self.sudoku = sudoku
-        self.right_button = QPushButton("Forward (l)")
-        self.left_button = QPushButton("Back (h)")
+        self.right_button = QPushButton("Forward (j)")
+        self.left_button = QPushButton("Back (k)")
         self.delete = QPushButton("Delete (d)")
         self.prune = QPushButton("Prune (p)")
         self.history_log = QLabel()
