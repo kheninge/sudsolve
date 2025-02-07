@@ -62,7 +62,7 @@ class GuiTop:
             "k": self.back,
             "p": self.prune,
             "d": self.delete,
-            "0": lambda: self.run_rule("update_potentials"),
+            "0": lambda: self.run_rule("eliminate_visible"),
             "1": lambda: self.run_rule("elimination_to_one"),
             "2": lambda: self.run_rule("single_possible_location"),
             "3": lambda: self.run_rule("aligned_potentials"),
