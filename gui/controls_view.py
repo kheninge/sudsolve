@@ -38,7 +38,7 @@ class ControlsView(QWidget):
             "new_puzzle": QComboBox(),
             "start": QPushButton("Re-Start (r)"),
             "close": QPushButton("Exit (q)"),
-            "history": QPushButton("History (d)"),
+            "history": QPushButton("History (o)"),
         }
         self.controls["new_puzzle"].setPlaceholderText("Choose a Puzzle")
         self.controls["new_puzzle"].addItems(puzzles_dict.keys())

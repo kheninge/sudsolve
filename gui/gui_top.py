@@ -57,9 +57,11 @@ class GuiTop:
             "q": self.app.quit,
             "x": self.app.quit,
             "r": self.initialize,
-            "d": self.toggle_history_dock,
+            "o": self.toggle_history_dock,
             "l": self.forward,
             "h": self.back,
+            "p": self.prune,
+            "d": self.delete,
             "0": lambda: self.run_rule("update_potentials"),
             "1": lambda: self.run_rule("elimination_to_one"),
             "2": lambda: self.run_rule("single_possible_location"),
@@ -98,6 +100,8 @@ class GuiTop:
         # History Docker
         self.right_docker.history_widget.right_button.clicked.connect(self.forward)
         self.right_docker.history_widget.left_button.clicked.connect(self.back)
+        self.right_docker.history_widget.prune.clicked.connect(self.prune)
+        self.right_docker.history_widget.delete.clicked.connect(self.delete)
 
     def _connect_updates(self):
         self.updater.updated.connect(self.control_widget.update_controls)
@@ -123,6 +127,14 @@ class GuiTop:
 
     def forward(self):
         self.sudoku.replay_history("forward")
+        self.updater.updated.emit()
+
+    def prune(self):
+        self.sudoku.prune_history_to_end()
+        self.updater.updated.emit()
+
+    def delete(self):
+        self.sudoku.delete_current_history_event()
         self.updater.updated.emit()
 
     def start(self):

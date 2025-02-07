@@ -30,14 +30,20 @@ class HistoryWidget(QWidget):
         self.sudoku = sudoku
         self.right_button = QPushButton("Forward (l)")
         self.left_button = QPushButton("Back (h)")
+        self.delete = QPushButton("Delete (d)")
+        self.prune = QPushButton("Prune (p)")
         self.history_log = QLabel()
 
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(self.left_button)
-        button_layout.addWidget(self.right_button)
+        button_layout1 = QHBoxLayout()
+        button_layout1.addWidget(self.left_button)
+        button_layout1.addWidget(self.right_button)
+        button_layout2 = QHBoxLayout()
+        button_layout2.addWidget(self.delete)
+        button_layout2.addWidget(self.prune)
         layout = QVBoxLayout()
         layout.addWidget(self.history_log)
-        layout.addLayout(button_layout)
+        layout.addLayout(button_layout2)
+        layout.addLayout(button_layout1)
         self.setLayout(layout)
 
     def update_history(self) -> None:
