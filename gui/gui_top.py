@@ -30,7 +30,7 @@ class GuiTop:
         self.sizes = FixedSizeControl(self.app, WIDTH_RATIO)
         self.updater = UpdateController()
         # Instantiate GUI Pieces
-        self.puzzle_widget = SudokuView(self.sudoku)
+        self.puzzle_widget = SudokuView(self.sudoku, self.updater)
         self.right_docker = RightDocker(self.sudoku)
         self.control_widget = ControlsView(
             self.sudoku,

@@ -41,6 +41,13 @@ def test_cell_invalid_init_0():
         my_cell.initialize(0)
 
 
+def test_speculative_solution():
+    my_cell = Cell()
+    my_cell.set_speculative_solution(6)
+    assert my_cell.speculative_solution
+    assert my_cell.solution == 6
+
+
 def test_cell_before_init_call_empty():
     my_cell = Cell()
     assert my_cell.solution is None

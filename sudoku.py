@@ -40,6 +40,7 @@ class Cell:
         self._check_cell_param_is_legal(initial)
         self._solved_value: CellValType = None
         self._new_solution: bool = False
+        self._speculative_solution: bool = False
         self._potentials: set[int] = set(SUD_RANGE)
         self._eliminated = set()
         self._next: dict[DirectionType, Cell | None] = dict.fromkeys(CSPACES)
@@ -95,6 +96,10 @@ class Cell:
     @property
     def new_solution(self) -> bool:
         return self._new_solution
+
+    @property
+    def speculative_solution(self) -> bool:
+        return self._speculative_solution
 
     def clear_new_solution(self) -> None:
         self._new_solution = False
@@ -163,14 +168,16 @@ class Cell:
                     return False
         return True
 
+    def set_speculative_solution(self, val: int) -> None:
+        self._speculative_solution = True
+        self._set_solution(val)
+
     def _set_solution(self, val: int) -> None:
         """Set the solution field. Clear the potentials field. Go through all visible c-spaces and remove solved value from their potentials"""
         self._solved_value = val
         self._new_solution = True
         self.clear_potentials()
         logger.info("Cell %d: Solution found: %d", self.id, self._solved_value)
-        # For all visibile c spaces, remove solved value from potentials
-        self._remove_potential_in_cspaces(val)
 
     def _remove_potential_in_cspaces(self, val: int) -> None:
         for direction in CSPACES:
@@ -268,6 +275,7 @@ class Cell:
             # Solved
             mysolution = self._potentials.pop()
             self._set_solution(mysolution)
+            self._remove_potential_in_cspaces(mysolution)
             progress = True
 
         return progress
@@ -283,6 +291,7 @@ class Cell:
             for num in self.potentials:
                 if num in singles_set:
                     self._set_solution(num)
+                    self._remove_potential_in_cspaces(num)
                     return True  # short circuit if solution found
         return False
 
