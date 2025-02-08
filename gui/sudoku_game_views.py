@@ -167,5 +167,5 @@ class HintsWidget(QWidget):
 
         action = context_menu.exec(event.globalPos())
         if action in actions:
-            self.cell.set_speculative_solution(actions[action])
+            self.cell.set_speculative_solution(actions[action], history_mode=False)
             self.updater.updated.emit()

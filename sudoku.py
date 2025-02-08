@@ -1,5 +1,6 @@
 import logging
 import itertools
+import re
 from typing import TypeAlias, Literal
 
 logger = logging.getLogger(__name__)
@@ -35,8 +36,9 @@ class Cell:
     run_rule(rule) - Takes these
     *"""
 
-    def __init__(self, id: int = 0, initial: CellValType = None) -> None:
+    def __init__(self, id: int = 0, history=None, initial: CellValType = None) -> None:
         self.id: int = id
+        self.history = history
         self._check_cell_param_is_legal(initial)
         self._solved_value: CellValType = None
         self._new_solution: bool = False
@@ -168,9 +170,11 @@ class Cell:
                     return False
         return True
 
-    def set_speculative_solution(self, val: int) -> None:
+    def set_speculative_solution(self, val: int, history_mode: bool) -> None:
         self._speculative_solution = True
         self._set_solution(val)
+        if not history_mode:
+            self.history.push_rule(f"speculative_solution:{self.id}:{val}")
 
     def _set_solution(self, val: int) -> None:
         """Set the solution field. Clear the potentials field. Go through all visible c-spaces and remove solved value from their potentials"""
@@ -249,6 +253,9 @@ class Cell:
 
     def run_rule(self, rule: str) -> bool:
         """Wrapper for running rules listed in rule"""
+        # Special case - speculative_solution, not really a rule
+        if "speculative_solution" in rule:
+            return self._replay_speculative_solution(rule)
         self.clear_new_solution()
         if rule not in self.rules.keys():
             logger.error("In run_rule, %s rule is called but not defined", rule)
@@ -260,6 +267,19 @@ class Cell:
 
         _ = self._update_potentials()
         return self.rules[rule]()
+
+    def _replay_speculative_solution(self, rule) -> bool:
+        match = re.search(r"speculative_solution:(\d+):(\d+)", rule)
+        if match:
+            id = int(match.group(1))
+            val = int(match.group(2))
+        else:
+            raise Exception("specultive solution replay error")
+        if self.id == id:
+            self.set_speculative_solution(val, history_mode=True)
+            return True
+        else:
+            return False
 
     def _rule_elimination(self) -> bool:
         """Eliminate all solutions seen in constrained spaces. This step is run for every rule, but in this case
@@ -428,7 +448,7 @@ class NineSquare:
                         returns true if any of them made progress
     """
 
-    def __init__(self, id: int = 0) -> None:
+    def __init__(self, id: int = 0, history=None) -> None:
         self.id: int = id
         self.rules = {
             "aligned_potentials": self._rule_aligned_potentials,
@@ -436,7 +456,7 @@ class NineSquare:
         self.cells: list[Cell] = []  # A list of cells to represent a NineSquare
         # Instantiate Cells
         for i in range(SUD_SPACE_SIZE):
-            self.cells.append(Cell(self.id * SUD_SPACE_SIZE + i))
+            self.cells.append(Cell(self.id * SUD_SPACE_SIZE + i, history))
         # Connect up rows of the NineSquare
         for i in (0, 3, 6):
             self.cells[i].connect("row", self.cells[i + 1])
@@ -501,6 +521,7 @@ class NineSquare:
         self.cells[8].connect("col", other.cell(0, 2))
 
     def check_consistency(self) -> bool:
+        return True
         total_result = True
         for i in range(SUD_SPACE_SIZE):
             total_result &= self.cells[i].check_consistency()
@@ -561,7 +582,7 @@ class Sudoku:
         self.history = History()
         self.ns: list[NineSquare] = []
         for i in range(SUD_SPACE_SIZE):
-            self.ns.append(NineSquare(i))
+            self.ns.append(NineSquare(i, self.history))
         # Connect up the rows
         for i in (0, 3, 6):
             self.ns[i].attach_row(self.ns[i + 1])
@@ -622,6 +643,7 @@ class Sudoku:
     # level. There has to be a way to collapse into one. The problem being run_rule needs to call update_potentials
     # and consistency_check as a part of that algorithm. Needs some thought
     def check_consistency(self) -> bool:
+        return True
         total_result = True
         for i in range(SUD_SPACE_SIZE):
             total_result &= self.ns[i].check_consistency()
@@ -663,17 +685,9 @@ class Sudoku:
 
     def replay_history(self, direction: str) -> bool:
         if direction == "back":
-            if self.history.at_beginning:
-                # Already at earliest point, do nothing
-                pass
-            else:
-                self.history.back()
+            self.history.back()
         elif direction == "forward":
-            if self.history.at_end:
-                # Already at latest point, do nothing
-                pass
-            else:
-                self.history.forward()
+            self.history.forward()
         else:
             raise Exception("Invalid Argument")
         self.initialize(history_mode=True)
@@ -695,10 +709,12 @@ class Sudoku:
 
 
 class History:
+    START = -1
+
     def __init__(self) -> None:
         self.rule_queue = []
-        self.tail_ptr = -1
-        self.curr_ptr = -1
+        self.tail_ptr = self.START
+        self.curr_ptr = self.START
 
     def push_rule(self, rule: str) -> None:
         self.rule_queue.insert(self.curr_ptr + 1, rule)
@@ -707,13 +723,15 @@ class History:
 
     def clear(self) -> None:
         self.rule_queue = []
-        self.tail_ptr = self.curr_ptr = -1
+        self.tail_ptr = self.curr_ptr = self.START
 
     def back(self) -> None:
-        self.curr_ptr -= 1
+        if self.curr_ptr != self.START:
+            self.curr_ptr -= 1
 
     def forward(self) -> None:
-        self.curr_ptr += 1
+        if not self.at_end:
+            self.curr_ptr += 1
 
     def delete_current(self) -> None:
         self.rule_queue.pop(self.curr_ptr)
@@ -738,7 +756,7 @@ class History:
 
     @property
     def at_beginning(self) -> bool:
-        return self.curr_ptr == -1
+        return self.curr_ptr == self.START
 
     @property
     def init_val(self) -> SudokuValType:

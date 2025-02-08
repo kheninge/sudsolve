@@ -1,5 +1,5 @@
 import pytest
-from sudoku import Cell
+from sudoku import Cell, History
 
 
 @pytest.fixture(scope="function")
@@ -42,8 +42,9 @@ def test_cell_invalid_init_0():
 
 
 def test_speculative_solution():
-    my_cell = Cell()
-    my_cell.set_speculative_solution(6)
+    history = History()
+    my_cell = Cell(0, history)
+    my_cell.set_speculative_solution(6, False)
     assert my_cell.speculative_solution
     assert my_cell.solution == 6
 
@@ -85,10 +86,10 @@ def test_cell_consistency_check():
     | 1 | 2 |
 
     """
-    r0c0 = Cell(0, 4)
-    r0c1 = Cell(0, 4)
-    r1c0 = Cell(0, 1)
-    r1c1 = Cell(0, 2)
+    r0c0 = Cell(id=0, initial=4)
+    r0c1 = Cell(id=0, initial=4)
+    r1c0 = Cell(id=0, initial=1)
+    r1c1 = Cell(id=0, initial=2)
     # connections
     r0c0.connect("row", r0c1)
     r0c1.connect("row", r0c0)
@@ -113,14 +114,14 @@ def test_cell_elimination_to_one_loop_solution_not_found():
     potentials should be {3, 5, 8, 9}
 
     """
-    r0c0 = Cell(0, 4)
-    r0c1 = Cell(0, 7)
+    r0c0 = Cell(initial=4)
+    r0c1 = Cell(initial=7)
     r0c2 = Cell()
-    r1c0 = Cell(0, 1)
+    r1c0 = Cell(initial=1)
     r1c1 = Cell()
-    r1c2 = Cell(0, 2)
+    r1c2 = Cell(initial=2)
     r2c0 = Cell()
-    r2c1 = Cell(0, 6)
+    r2c1 = Cell(initial=6)
     r2c2 = Cell()
     # row connection
     r0c0.connect("row", r0c1)
@@ -183,15 +184,15 @@ def test_cell_elimination_to_one_loop_solution_is_found():
     solution should be 9
 
     """
-    r0c0 = Cell(0, 4)
-    r0c1 = Cell(0, 7)
-    r0c2 = Cell(0, 3)
-    r1c0 = Cell(0, 1)
+    r0c0 = Cell(initial=4)
+    r0c1 = Cell(initial=7)
+    r0c2 = Cell(initial=3)
+    r1c0 = Cell(initial=1)
     r1c1 = Cell()
-    r1c2 = Cell(0, 2)
-    r2c0 = Cell(0, 5)
-    r2c1 = Cell(0, 6)
-    r2c2 = Cell(0, 8)
+    r1c2 = Cell(initial=2)
+    r2c0 = Cell(initial=5)
+    r2c1 = Cell(initial=6)
+    r2c2 = Cell(initial=8)
     # row connection
     r0c0.connect("row", r0c1)
     r0c1.connect("row", r0c2)
