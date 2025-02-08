@@ -159,34 +159,13 @@ class HintsWidget(QWidget):
     def contextMenuEvent(self, event: QContextMenuEvent):
         context_menu = QMenu(self)
         context_menu.setStyleSheet("color: black")
-        context_menu.setTitle("Specify a Solution")
-        action1 = context_menu.addAction("1")
-        action2 = context_menu.addAction("2")
-        action3 = context_menu.addAction("3")
-        action4 = context_menu.addAction("4")
-        action5 = context_menu.addAction("5")
-        action6 = context_menu.addAction("6")
-        action7 = context_menu.addAction("7")
-        action8 = context_menu.addAction("8")
-        action9 = context_menu.addAction("9")
+        context_menu.addAction("Choose a Solution").setEnabled(False)
+
+        actions = {}
+        for i in range(1, 10):
+            actions[context_menu.addAction(str(i))] = i
 
         action = context_menu.exec(event.globalPos())
-        if action == action1:
-            self.cell.set_speculative_solution(1)
-        elif action == action2:
-            self.cell.set_speculative_solution(2)
-        elif action == action3:
-            self.cell.set_speculative_solution(3)
-        elif action == action4:
-            self.cell.set_speculative_solution(4)
-        elif action == action5:
-            self.cell.set_speculative_solution(5)
-        elif action == action6:
-            self.cell.set_speculative_solution(6)
-        elif action == action7:
-            self.cell.set_speculative_solution(7)
-        elif action == action8:
-            self.cell.set_speculative_solution(8)
-        elif action == action9:
-            self.cell.set_speculative_solution(9)
-        self.updater.updated.emit()
+        if action in actions:
+            self.cell.set_speculative_solution(actions[action])
+            self.updater.updated.emit()
