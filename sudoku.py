@@ -43,6 +43,7 @@ class Cell:
         self._solved_value: CellValType = None
         self._new_solution: bool = False
         self._speculative_solution: bool = False
+        self._error: bool = False
         self._potentials: set[int] = set(SUD_RANGE)
         self._eliminated = set()
         self._next: dict[DirectionType, Cell | None] = dict.fromkeys(CSPACES)
@@ -94,6 +95,10 @@ class Cell:
     @property
     def solved(self) -> bool:
         return self.solution is not None
+
+    @property
+    def in_error(self) -> bool:
+        return self._error
 
     @property
     def new_solution(self) -> bool:
@@ -189,13 +194,19 @@ class Cell:
             while cell != self:
                 if cell is None:
                     raise Exception("Cell network is not set up correctly")
-                _ = cell.remove_potential(val)
+                if not cell.solved:
+                    _ = cell.remove_potential(val)
+                    # If all potentials are gone something is wrong mark the cell in error
+                    if not cell.potentials:
+                        cell._error = True
                 cell = cell.traverse(direction)
 
     def initialize(self, val: CellValType) -> None:
         """cell can be initialized to a digit 1 - 9 or to None"""
         logger.debug("Init is called for Cell %d", self.id)
         self._check_cell_param_is_legal(val)
+        self._speculative_solution = False
+        self._error = False
         if val is not None:
             self._initial_value = val
             # Can't  just call _set_solution here as network isn't guarenteed to be set up yet
@@ -220,12 +231,9 @@ class Cell:
                 if cell.solution:
                     _ = self.remove_potential(cell.solution)
                 cell = cell.traverse(direction)
-
+            # If all potentials are gone something is wrong mark the cell in error
             if not self.potentials:
-                logger.error(
-                    "Something wrong with puzzle, potentials for cell %d is empty",
-                    self.id,
-                )
+                self._error = True
         if len(self._potentials) < potential_starting_len:
             logger.debug("Cell %d made progress on potentials", self.id)
             return True
@@ -265,6 +273,8 @@ class Cell:
             # Already solved
             return False
 
+        # TODO is this needed other than the first time? Since the rules themselves update potentials whenever a
+        # solution is found?
         _ = self._update_potentials()
         return self.rules[rule]()
 

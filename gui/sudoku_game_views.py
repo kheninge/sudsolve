@@ -13,6 +13,7 @@ from gui.update_controller import UpdateController
 from sudoku import NineSquare, Sudoku, Cell
 
 COLOR_YELLOW = "#f4f8b2"
+COLOR_RED = "red"
 
 
 class SudokuView(QWidget):
@@ -96,15 +97,21 @@ class CellWidget(QStackedWidget):
     def _compose_style(self, cell: Cell) -> str:
         solution_font = "black"  # default
         background = ""
-        if cell.solved:
+        if cell.in_error:
+            background = f"background-color: {COLOR_RED};"
+        elif cell.solved:
             if cell.new_solution:
-                background = "background-color: {COLOR_YELLOW};"
+                background = f"background-color: {COLOR_YELLOW};"
             if cell.speculative_solution:
                 solution_font = "blue"
         return f"border: 1px solid black; {background}font-size: {self.normal_font}px; color: {solution_font}"
 
     def update_cell(self):
-        if self.cell.solved:
+        if self.cell.in_error:
+            style = self._compose_style(self.cell)
+            self.solved_view.setStyleSheet(style)
+            self.setCurrentIndex(1)
+        elif self.cell.solved or self.cell.in_error:
             val = str(self.cell.solution)  # Labels take strings not int
             self.solved_view.setText(val)
             style = self._compose_style(self.cell)
