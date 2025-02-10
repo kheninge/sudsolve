@@ -6,7 +6,7 @@ from gui.fixed_size_control import FixedSizeControl
 from gui.history_docker import RightDocker
 from gui.controls_view import ControlsView
 from gui.sudoku_game_views import SudokuView
-from sudoku import Sudoku, SudokuValType
+from sudoku.sudoku import Sudoku, SudokuValType
 from gui.update_controller import UpdateController
 
 from gui.main_view import SSolveMain

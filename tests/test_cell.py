@@ -1,5 +1,6 @@
 import pytest
-from sudoku import Cell, History
+from sudoku.history import History
+from sudoku.cell import Cell
 
 
 @pytest.fixture(scope="function")

@@ -1,5 +1,5 @@
 import pytest
-from sudoku import NineSquare
+from sudoku.sudoku import NineSquare
 
 
 def test_nine_square_init():

@@ -10,7 +10,9 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QContextMenuEvent
 from gui.update_controller import UpdateController
-from sudoku import NineSquare, Sudoku, Cell
+from sudoku.sudoku import Sudoku
+from sudoku.ninesquare import NineSquare
+from sudoku.cell import Cell
 
 COLOR_YELLOW = "#f4f8b2"
 COLOR_RED = "red"

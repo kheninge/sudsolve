@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from gui.fixed_size_control import FixedSizeControl
 from gui.history_docker import RightDocker
-from sudoku import Sudoku, SudokuValType
+from sudoku.sudoku import Sudoku, SudokuValType
 
 
 class ControlsView(QWidget):

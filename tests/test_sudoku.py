@@ -1,5 +1,5 @@
 import pytest
-from sudoku import Sudoku
+from sudoku.sudoku import Sudoku
 
 
 def test_sudoku_initialize_and_solutions_match():

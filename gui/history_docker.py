@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QLabel,
 )
 from gui.fixed_size_control import FixedSizeControl
-from sudoku import Sudoku
+from sudoku.sudoku import Sudoku
 
 
 class RightDocker(QDockWidget):
