@@ -712,10 +712,8 @@ class Sudoku:
         self.history.prune()
 
     def delete_current_history_event(self) -> bool:
-        if not self.history.at_beginning:
-            self.history.delete_current()
-            return self.replay_history("back")
-        return False
+        self.history.delete_current()
+        return self.replay_history("back")
 
 
 class History:
@@ -744,8 +742,9 @@ class History:
             self.curr_ptr += 1
 
     def delete_current(self) -> None:
-        self.rule_queue.pop(self.curr_ptr)
-        self.tail_ptr -= 1
+        if not self.at_beginning:
+            self.rule_queue.pop(self.curr_ptr)
+            self.tail_ptr -= 1
 
     def prune(self) -> None:
         next = self.curr_ptr + 1
