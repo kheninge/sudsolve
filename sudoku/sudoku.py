@@ -1,13 +1,14 @@
 import logging
 from sudoku.history import History
 from sudoku.ninesquare import NineSquare
-from sudoku.defines import SudokuValType, NineSquareValType, SUD_SPACE_SIZE, SUD_RANGE
+from sudoku.defines import SudokuValType, SUD_SPACE_SIZE
 
 logger = logging.getLogger(__name__)
 
 # TODO:
 # *  Publish as an executable to windows
 # *  Publish to linux and mac?
+
 
 class Sudoku:
     """Represents the datastructure for a full Sudoku mesh and includes methods

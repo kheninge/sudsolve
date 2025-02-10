@@ -20,7 +20,7 @@ class NineSquare:
                         returns true if any of them made progress
     """
 
-    def __init__(self, id: int = 0, history: History = None) -> None:
+    def __init__(self, id: int = 0, history: History | None = None) -> None:
         self.id: int = id
         self.rules = {
             "aligned_potentials": self._rule_aligned_potentials,

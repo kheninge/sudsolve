@@ -28,7 +28,7 @@ class Cell:
     *"""
 
     def __init__(
-        self, id: int = 0, history: History = None, initial: CellValType = None
+        self, id: int = 0, history: History | None = None, initial: CellValType = None
     ) -> None:
         self.id: int = id
         self.history = history
@@ -172,7 +172,8 @@ class Cell:
         self._speculative_solution = True
         self._set_solution(val)
         if not history_mode:
-            self.history.push_rule(f"speculative_solution:{self.id}:{val}")
+            if self.history:
+                self.history.push_rule(f"speculative_solution:{self.id}:{val}")
 
     def _set_solution(self, val: int) -> None:
         """Set the solution field. Clear the potentials field. Go through all visible c-spaces and remove solved value from their potentials"""
