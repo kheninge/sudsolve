@@ -112,6 +112,7 @@ class CellWidget(QStackedWidget):
         if self.cell.in_error:
             style = self._compose_style(self.cell)
             self.solved_view.setStyleSheet(style)
+            self.solved_view.setText("Err")
             self.setCurrentIndex(1)
         elif self.cell.solved or self.cell.in_error:
             val = str(self.cell.solution)  # Labels take strings not int
