@@ -272,3 +272,25 @@ def test_sudoku_matched_pairs_four_pairs_only_two_matched():
     assert pots == {1, 5}
     pots = puzzle.ns[0].cell(0, 1).potentials
     assert pots == {1, 5}
+
+
+def test_sudoku_matched_triplets():
+    """Sinlge matched triplet. The other potentials should be eliminated"""
+    puzzle = Sudoku()
+    init1 = (
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, None, 1, 2, 3, None, None, None),
+        (None, None, None, None, None, None, 1, 2, 3),
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+        (None, None, None, None, None, None, None, None, None),
+    )
+    puzzle.load(init1)
+    puzzle.initialize()
+    progress = puzzle.run_rule("matched_triplets")
+    assert progress
+    pots = puzzle.ns[0].cell(0, 0).potentials
+    assert pots == {1, 2, 3}

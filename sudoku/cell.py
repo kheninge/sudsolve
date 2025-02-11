@@ -46,6 +46,8 @@ class Cell:
             "elimination_to_one": self._rule_elimination_to_one,
             "single_possible_location": self._rule_single_possible_location,
             "matched_pairs": self._rule_matched_pairs,
+            "matched_triplets": self._rule_matched_triplets,
+            "matched_quads": self._rule_matched_quads,
         }
         self.initialize(initial)
 
@@ -320,18 +322,28 @@ class Cell:
         return False
 
     def _rule_matched_pairs(self) -> bool:
+        return self._rule_matched_things(2)
+
+    def _rule_matched_triplets(self) -> bool:
+        return self._rule_matched_things(3)
+
+    def _rule_matched_quads(self) -> bool:
+        return self._rule_matched_things(4)
+
+    def _rule_matched_things(self, mode) -> bool:
+        """mode is 2 for pairs, 3 for triplets, 4 for quads etc"""
         total_return = False
 
         for direction in CSPACES:
             logger.debug("In rule_matched_pairs, direction is %s", direction)
-            pairs_set = self._gather_multiples(2, direction)
+            pairs_set = self._gather_multiples(mode, direction)
             total_num_pairs = len(pairs_set)
             # 2 is the minimum that can match
-            if total_num_pairs < 2:
+            if total_num_pairs < mode:
                 continue
             # Check to see if subset number of pairs only shows up in that number of  cells. If so then they are "matched"
             # e.g. 2 pairs that only potentially exist in 2 cells or 3 pairs that only potentially exist in 3 cells
-            for subset_num_pairs in range(2, total_num_pairs + 1):
+            for subset_num_pairs in range(mode, total_num_pairs + 1):
                 # For every number of pairs from 2 to number of pairs found pick a combination of N choose n
                 combinations = itertools.combinations(pairs_set, subset_num_pairs)
                 for combo in combinations:

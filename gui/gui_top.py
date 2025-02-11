@@ -67,6 +67,8 @@ class GuiTop:
             "2": lambda: self.run_rule("single_possible_location"),
             "3": lambda: self.run_rule("aligned_potentials"),
             "4": lambda: self.run_rule("matched_pairs"),
+            "5": lambda: self.run_rule("matched_triplets"),
+            "6": lambda: self.run_rule("matched_quads"),
         }
         for k, func in shortcuts.items():
             QShortcut(QKeySequence(k), self.main_widget).activated.connect(func)
@@ -93,6 +95,12 @@ class GuiTop:
         )
         self.control_widget.rules["matched_pairs"].clicked.connect(
             lambda: self.run_rule("matched_pairs")
+        )
+        self.control_widget.rules["matched_triplets"].clicked.connect(
+            lambda: self.run_rule("matched_triplets")
+        )
+        self.control_widget.rules["matched_quads"].clicked.connect(
+            lambda: self.run_rule("matched_quads")
         )
         self.control_widget.rules["aligned_rule"].clicked.connect(
             lambda: self.run_rule("aligned_potentials")

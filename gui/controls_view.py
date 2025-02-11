@@ -52,6 +52,7 @@ class ControlsView(QWidget):
             "aligned_rule": QPushButton("Aligned Potentials (3)"),
             "matched_pairs": QPushButton("Matched Pairs (4)"),
             "matched_triplets": QPushButton("Matched Triplets (5)"),
+            "matched_quads": QPushButton("Matched Quads (6)"),
         }
         # Size the buttons
         for it in self.rules:

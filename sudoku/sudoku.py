@@ -40,9 +40,9 @@ class Sudoku:
         self.ns: list[NineSquare] = []
         for i in range(SUD_SPACE_SIZE):
             self.ns.append(NineSquare(i, self.history))
-        self._connect_cell_network()
+        self._connect_ninesquare_network()
 
-    def _connect_cell_network(self):
+    def _connect_ninesquare_network(self):
         # Connect up the rows
         for i in (0, 3, 6):
             self.ns[i].attach_row(self.ns[i + 1])
@@ -165,3 +165,4 @@ class Sudoku:
         for i in range(SUD_SPACE_SIZE):
             sols.append(self.ns[i].solutions)
         return tuple(sols)
+
