@@ -10,9 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class SubLine:
-    """Represents the 3 squares overlapping between a square's row or column and the full row or column
+    """Represents the 3 cells which overlap between a line (row, col) and a ninesquare.
     The concept of a sub row or sub col is useful in solving the aligned potentials rule.
-    A subline also has a list of the non overlapping cells in both the square and the line.
+    A subline also builds a list of the non overlapping cells in both the ninesquare and the line.
     Given a base cell and a direction, the constructor will traverse the cell network and build a list of :
     subrow, non-matching squares, non-matching row/col
 
@@ -21,8 +21,8 @@ class SubLine:
 
     def __init__(self, base: Cell, direction: str) -> None:
         self.overlap = []
-        self.sq_non_over_lap = []
-        self.ln_non_over_lap = []
+        self.square_non_over_lap = []
+        self.line_non_over_lap = []
 
         next = base
         if direction == "row":
@@ -34,11 +34,11 @@ class SubLine:
                 next = next.traverse("row")
             # Next 6 in the row are the non-overlap
             for _ in range(6):
-                self.ln_non_over_lap.append(next)
+                self.line_non_over_lap.append(next)
                 next = next.traverse("row")
             # Next 6 of the circular NineSquare space is the non-overlap
             for _ in range(6):
-                self.sq_non_over_lap.append(sq_next)
+                self.square_non_over_lap.append(sq_next)
                 sq_next = sq_next.traverse("square")
         else:
             if direction != "col":
@@ -49,12 +49,12 @@ class SubLine:
                 next = next.traverse("col")
             # Next 6 in the col are the non-overlap
             for _ in range(6):
-                self.ln_non_over_lap.append(next)
+                self.line_non_over_lap.append(next)
                 next = next.traverse("col")
             next = base
             for _ in range(SUD_SPACE_SIZE):
                 if next not in self.overlap:
-                    self.sq_non_over_lap.append(next)
+                    self.square_non_over_lap.append(next)
                 next = next.traverse("square")
 
     def aligned_potentials(self) -> bool:
@@ -71,19 +71,19 @@ class SubLine:
             if cnt > 1:
                 # Check if potential exists in non-overlap square
                 found_in_non_ov_square = False
-                for cell in self.sq_non_over_lap:
+                for cell in self.square_non_over_lap:
                     if p in cell.potentials:
                         found_in_non_ov_square = True
                 if not found_in_non_ov_square:
                     # This is the aligned case
-                    for cell in self.ln_non_over_lap:
+                    for cell in self.line_non_over_lap:
                         progress = progress | cell.remove_potential(p)
                 else:
                     found_in_non_ov_line = False
-                    for cell in self.ln_non_over_lap:
+                    for cell in self.line_non_over_lap:
                         if p in cell.potentials:
                             found_in_non_ov_line = True
                     if not found_in_non_ov_line:
-                        for cell in self.sq_non_over_lap:
+                        for cell in self.square_non_over_lap:
                             progress = progress | cell.remove_potential(p)
         return progress

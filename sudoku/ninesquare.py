@@ -15,6 +15,7 @@ class NineSquare:
     * initialize(vals) - takes a tuple of 9 values and assigns them to the nine cells
     * attach_row(self, some_nine_square) - connect the given nine square to self's pointers
     * attach_col(self, some_nine_square) - connect the given nine square to self's pointers
+    * connect_sublines(self) - creates the subline structures needed for the aligned_potentials rule
     * cell(row, col) - given a row, column returns the cell at that location
     * elimination_to_one_loop() - iterate through all cells and call their elimination_to_one_loop method
                         returns true if any of them made progress
@@ -29,6 +30,9 @@ class NineSquare:
         # Instantiate Cells
         for i in range(SUD_SPACE_SIZE):
             self.cells.append(Cell(self.id * SUD_SPACE_SIZE + i, history))
+        self._connect_cell_network()
+
+    def _connect_cell_network(self):
         # Connect up rows of the NineSquare
         for i in (0, 3, 6):
             self.cells[i].connect("row", self.cells[i + 1])
@@ -42,20 +46,17 @@ class NineSquare:
             self.cells[i].connect("square", self.cells[i + 1])
         self.cells[8].connect("square", self.cells[0])
 
-    def connect_sublines(self):
-        self.sublines = []
-        for i, cell in enumerate(self.cells):
-            if i == 0:
-                self.sublines.append(SubLine(cell, "row"))
-                self.sublines.append(SubLine(cell, "col"))
-            if i == 1:
-                self.sublines.append(SubLine(cell, "col"))
-            if i == 2:
-                self.sublines.append(SubLine(cell, "col"))
-            if i == 3:
-                self.sublines.append(SubLine(cell, "row"))
-            if i == 6:
-                self.sublines.append(SubLine(cell, "row"))
+    def create_sublines(self):
+        # This function has to run after the full cell network has been connected up since SubLine init will connect
+        # up a subline network which relies on the full cell network
+        self.sublines = [
+            SubLine(self.cells[0], "col"),
+            SubLine(self.cells[1], "col"),
+            SubLine(self.cells[2], "col"),
+            SubLine(self.cells[0], "row"),
+            SubLine(self.cells[3], "row"),
+            SubLine(self.cells[6], "row"),
+        ]
 
     def initialize(self, vals: NineSquareValType) -> None:
         for i in range(SUD_SPACE_SIZE):
@@ -93,6 +94,7 @@ class NineSquare:
         self.cells[8].connect("col", other.cell(0, 2))
 
     def check_consistency(self) -> bool:
+        # TODO need to figure out if this is needed and if so where/when to call it
         return True
         total_result = True
         for i in range(SUD_SPACE_SIZE):

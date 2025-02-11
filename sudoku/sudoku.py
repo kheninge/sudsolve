@@ -40,6 +40,9 @@ class Sudoku:
         self.ns: list[NineSquare] = []
         for i in range(SUD_SPACE_SIZE):
             self.ns.append(NineSquare(i, self.history))
+        self._connect_cell_network()
+
+    def _connect_cell_network(self):
         # Connect up the rows
         for i in (0, 3, 6):
             self.ns[i].attach_row(self.ns[i + 1])
@@ -56,8 +59,30 @@ class Sudoku:
         # cell methods??
         _ = self.ns[0].cell(0, 0).connection_ok
         for n in self.ns:
-            n.connect_sublines()
+            n.create_sublines()
 
+    # TODO The following functions all do the same thing. Traverse the ninesquares calling this same function at that
+    # level. There has to be a way to collapse into one. The problem being run_rule needs to call update_potentials
+    # and consistency_check as a part of that algorithm. Needs some thought
+    def check_consistency(self) -> bool:
+        return True
+        total_result = True
+        for i in range(SUD_SPACE_SIZE):
+            total_result &= self.ns[i].check_consistency()
+        return total_result
+
+    def _update_all_potentials(self) -> bool:
+        total_result = False
+        for square in self.ns:
+            total_result |= square.run_rule("update_potentials")
+        logger.info(
+            "Sudoku Class finishing elimination_to_one result is %d", total_result
+        )
+        if not self.check_consistency():
+            raise Exception("update_all_potentials failed check_consistency")
+        return total_result
+
+    ## Public API
     def load(self, init_val: SudokuValType):
         self.init_val = init_val
 
@@ -73,50 +98,6 @@ class Sudoku:
             logger.info("Sudoku Class finished initialization")
         self._initial_state = True
 
-    @property
-    def solved(self) -> bool:
-        all_solved = True
-        for ns in self.ns:
-            all_solved &= ns.solved
-        return all_solved
-
-    @property
-    def last_rule_progressed(self) -> bool:
-        return self._last_rule_progressed
-
-    @property
-    def initial_state(self) -> bool:
-        """True if puzzle is still in the initial state and no rules run"""
-        return self._initial_state
-
-    @property
-    def solutions(self) -> SudokuValType:
-        sols = []
-        for i in range(SUD_SPACE_SIZE):
-            sols.append(self.ns[i].solutions)
-        return tuple(sols)
-
-    # TODO The following functions all do the same thing. Traverse the ninesquares calling this same function at that
-    # level. There has to be a way to collapse into one. The problem being run_rule needs to call update_potentials
-    # and consistency_check as a part of that algorithm. Needs some thought
-    def check_consistency(self) -> bool:
-        return True
-        total_result = True
-        for i in range(SUD_SPACE_SIZE):
-            total_result &= self.ns[i].check_consistency()
-        return total_result
-
-    def update_all_potentials(self) -> bool:
-        total_result = False
-        for square in self.ns:
-            total_result |= square.run_rule("update_potentials")
-        logger.info(
-            "Sudoku Class finishing elimination_to_one result is %d", total_result
-        )
-        if not self.check_consistency():
-            raise Exception("update_all_potentials failed check_consistency")
-        return total_result
-
     def run_rule(self, rule: str, history_mode=False) -> bool:
         """Wrapper to send the generic rule to each of the NineSquares"""
         logger.info("Sudoku Class starting rule %s", rule)
@@ -129,7 +110,7 @@ class Sudoku:
                 c.clear_eliminated()
         if not history_mode:
             self.history.push_rule(rule)
-        _ = self.update_all_potentials()  # Do this for all cells before any rule runs
+        _ = self._update_all_potentials()  # Do this for all cells before any rule runs
         for square in self.ns:
             total_result |= square.run_rule(rule)
         logger.info(
@@ -161,3 +142,26 @@ class Sudoku:
     def delete_current_history_event(self) -> bool:
         self.history.delete_current()
         return self.replay_history("back")
+
+    @property
+    def solved(self) -> bool:
+        all_solved = True
+        for ns in self.ns:
+            all_solved &= ns.solved
+        return all_solved
+
+    @property
+    def last_rule_progressed(self) -> bool:
+        return self._last_rule_progressed
+
+    @property
+    def initial_state(self) -> bool:
+        """True if puzzle is still in the initial state and no rules run"""
+        return self._initial_state
+
+    @property
+    def solutions(self) -> SudokuValType:
+        sols = []
+        for i in range(SUD_SPACE_SIZE):
+            sols.append(self.ns[i].solutions)
+        return tuple(sols)
