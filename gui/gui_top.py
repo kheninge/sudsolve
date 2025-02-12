@@ -11,7 +11,7 @@ from gui.update_controller import UpdateController
 
 from gui.main_view import SSolveMain
 
-TITLE = "Kurt's Suduko Logical Rule Solver"
+TITLE = "Sudoku Assistant"
 WIDTH_RATIO = 0.4
 
 

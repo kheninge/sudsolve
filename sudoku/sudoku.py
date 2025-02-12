@@ -5,10 +5,6 @@ from sudoku.defines import PuzzleFormat, SUD_SPACE_SIZE
 
 logger = logging.getLogger(__name__)
 
-# TODO:
-# *  Publish as an executable to windows
-# *  Publish to linux and mac?
-
 
 class Sudoku:
     """Represents the datastructure for a full Sudoku mesh and includes methods
