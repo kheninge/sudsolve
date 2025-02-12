@@ -3,7 +3,7 @@ from typing import TypeAlias, Literal
 ## Define some types
 CellValType: TypeAlias = int | None
 NineSquareValType: TypeAlias = tuple[CellValType, ...]
-SudokuValType: TypeAlias = tuple[NineSquareValType, ...]
+PuzzleFormat: TypeAlias = tuple[NineSquareValType, ...]
 DirectionType: TypeAlias = Literal["row", "col", "square"]
 
 ## Constant Defines

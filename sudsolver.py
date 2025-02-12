@@ -8,7 +8,7 @@
 # Linux Compile command: python3 -m nuitka sudsolver.py
 
 from gui.gui_top import GuiTop
-from sudoku.sudoku import Sudoku, SudokuValType
+from sudoku.sudoku import Sudoku, PuzzleFormat
 import yaml
 from pathlib import Path
 
@@ -29,7 +29,7 @@ def main():
     gui.start()
 
 
-def convert_to_ns_format(puzzles: dict) -> dict[str, SudokuValType]:
+def convert_to_ns_format(puzzles: dict) -> dict[str, PuzzleFormat]:
     converted_puzzle_d = {}
     for title, puzzle in puzzles.items():
         ns_list = []  # list of nine empty nineSquare lists

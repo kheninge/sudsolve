@@ -1,7 +1,7 @@
 import logging
 from sudoku.history import History
 from sudoku.ninesquare import NineSquare
-from sudoku.defines import SudokuValType, SUD_SPACE_SIZE
+from sudoku.defines import PuzzleFormat, SUD_SPACE_SIZE
 
 logger = logging.getLogger(__name__)
 
@@ -83,7 +83,7 @@ class Sudoku:
         return total_result
 
     ## Public API
-    def load(self, init_val: SudokuValType):
+    def load(self, init_val: PuzzleFormat):
         self.init_val = init_val
 
     def initialize(self, history_mode=False) -> None:
@@ -160,9 +160,8 @@ class Sudoku:
         return self._initial_state
 
     @property
-    def solutions(self) -> SudokuValType:
+    def solutions(self) -> PuzzleFormat:
         sols = []
         for i in range(SUD_SPACE_SIZE):
             sols.append(self.ns[i].solutions)
         return tuple(sols)
-
