@@ -10,15 +10,6 @@ from gui.controls_view import ControlsView
 from gui.sudoku_game_views import SudokuView
 
 
-# TODO:
-# * Create a log with sudsovler.py
-# * code remaining rules
-# * scripting language to save order of button pushes (stretch)
-# * puzzle editing mode instead of having to edit the yaml file directly (stretch)
-# * Keep a list of button pushes. Have a back and foward button which will replay. Could save solutions off to file
-# as well, like the scripting language item above?
-
-
 class SSolveMain(QMainWindow):
     def __init__(
         self,

@@ -46,6 +46,7 @@ class Cell:
             "elimination_to_one": self._rule_elimination_to_one,
             "single_possible_location": self._rule_single_possible_location,
             "filled_cells": self._rule_filled_cells,
+            "filled_potentials": self._rule_filled_potentials,
         }
         self.initialize(initial)
 
@@ -56,8 +57,8 @@ class Cell:
             if type(val) is not int:
                 raise ValueError
             if val < SUD_VAL_START or val > SUD_VAL_END:
+                logger.debug("Cell Value %d for cell id %d is illegal", val, self.id)
                 raise ValueError
-        logger.debug("Cell Value for cell id %d is legal", self.id)
 
     def _check_network_connectivity(self) -> bool:
         """Check to make sure everything is connected properly for this cell; make sure no endless loops
@@ -355,14 +356,50 @@ class Cell:
                     combo = set(combo)
                     matching_cells = []
                     for cell in cells:
-                        if cell.potentials.intersection(combo):
+                        if cell.potentials & combo:
                             matching_cells.append(cell)
                     if len(matching_cells) == n:
                         # We have found a set of matched pairs, now go through each cell and eliminate any potential
                         # that is not part of the matched pair combination
-                        for c in matching_cells:
-                            to_remove = c.potentials - combo
+                        for cell in matching_cells:
+                            to_remove = cell.potentials - combo
                             for p in to_remove:
-                                _ = c.remove_potential(p)
+                                _ = cell.remove_potential(p)
                                 total_return |= True
+        return total_return
+
+    def _rule_filled_potentials(self) -> bool:
+        """This rule relies on the same premise as filled_cells, that n values constrained to n cells is full and
+        there is no more room. Filled potentials is the inferred opposite, if you find any n cells that only contain
+        n potential values then you can assume those potential values will not be seen in the other cells. This is
+        the general case of the eliminate to one rule as that rule is just the 1 value in 1 cell case.
+        """
+        total_return = False
+
+        for direction in CSPACES:
+            # Build a list of unsolved cells
+            unsolved_cells = []
+            cell = self
+            while True:
+                if cell is None:
+                    raise Exception("Cell network is not set up correctly")
+                if not cell.solved:
+                    unsolved_cells.append(cell)
+                cell = cell.traverse(direction)
+                if cell == self:
+                    break
+            for n in range(1, len(unsolved_cells) + 1):
+                for combo in itertools.combinations(unsolved_cells, n):
+                    potentials_set = set()
+                    for cell in combo:
+                        potentials_set |= cell.potentials
+                    if len(potentials_set) == len(combo):
+                        # We have found a set of matched pairs, now go through each cell not in the combo and
+                        # eliminate any potential from the combo
+                        for cell in unsolved_cells:
+                            if cell in combo:
+                                continue
+                            for p in potentials_set:
+                                progress = cell.remove_potential(p)
+                                total_return |= progress
         return total_return

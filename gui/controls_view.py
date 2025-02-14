@@ -51,9 +51,7 @@ class ControlsView(QWidget):
             "spl_rule": QPushButton("Single Possible Location (2)"),
             "aligned_rule": QPushButton("Aligned Potentials (3)"),
             "filled_cells": QPushButton("Filled Cells (4)"),
-            # "matched_pairs": QPushButton("Matched Pairs (4)"),
-            # "matched_triplets": QPushButton("Matched Triplets (5)"),
-            # "matched_quads": QPushButton("Matched Quads (6)"),
+            "filled_potentials": QPushButton("Filled Potentials (5)"),
         }
         # Size the buttons
         for it in self.rules:

@@ -67,6 +67,7 @@ class GuiTop:
             "2": lambda: self.run_rule("single_possible_location"),
             "3": lambda: self.run_rule("aligned_potentials"),
             "4": lambda: self.run_rule("filled_cells"),
+            "5": lambda: self.run_rule("filled_potentials"),
         }
         for k, func in shortcuts.items():
             QShortcut(QKeySequence(k), self.main_widget).activated.connect(func)
@@ -93,6 +94,9 @@ class GuiTop:
         )
         self.control_widget.rules["filled_cells"].clicked.connect(
             lambda: self.run_rule("filled_cells")
+        )
+        self.control_widget.rules["filled_potentials"].clicked.connect(
+            lambda: self.run_rule("filled_potentials")
         )
         self.control_widget.rules["aligned_rule"].clicked.connect(
             lambda: self.run_rule("aligned_potentials")
