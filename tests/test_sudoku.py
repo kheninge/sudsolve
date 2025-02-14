@@ -204,7 +204,7 @@ def test_sudoku_with_Daniel():
     print(puzzle.solutions)
 
 
-def test_sudoku_matched_pairs_single_pair():
+def test_sudoku_filled_cells_single_pair():
     """Sinlge matched pair. The other potentials should be eliminated"""
     puzzle = Sudoku()
     init1 = (
@@ -220,7 +220,7 @@ def test_sudoku_matched_pairs_single_pair():
     )
     puzzle.load(init1)
     puzzle.initialize()
-    progress = puzzle.run_rule("matched_pairs")
+    progress = puzzle.run_rule("filled_cells")
     assert progress
     pots = puzzle.ns[0].cell(1, 1).potentials
     assert pots == {1, 2}
@@ -242,7 +242,7 @@ def test_sudoku_matched_pairs_four_pairs():
     )
     puzzle.load(init1)
     puzzle.initialize()
-    progress = puzzle.run_rule("matched_pairs")
+    progress = puzzle.run_rule("filled_cells")
     assert progress
     pots = puzzle.ns[0].cell(1, 2).potentials
     assert pots == {1, 7}
@@ -266,12 +266,10 @@ def test_sudoku_matched_pairs_four_pairs_only_two_matched():
     )
     puzzle.load(init1)
     puzzle.initialize()
-    progress = puzzle.run_rule("matched_pairs")
+    progress = puzzle.run_rule("filled_cells")
     assert progress
-    pots = puzzle.ns[0].cell(0, 0).potentials
-    assert pots == {1, 5}
-    pots = puzzle.ns[0].cell(0, 1).potentials
-    assert pots == {1, 5}
+    assert puzzle.ns[0].cell(0, 0).potentials == {1, 5}
+    assert puzzle.ns[0].cell(0, 1).potentials == {1, 5}
 
 
 def test_sudoku_matched_triplets():
@@ -290,7 +288,6 @@ def test_sudoku_matched_triplets():
     )
     puzzle.load(init1)
     puzzle.initialize()
-    progress = puzzle.run_rule("matched_triplets")
+    progress = puzzle.run_rule("filled_cells")
     assert progress
-    pots = puzzle.ns[0].cell(0, 0).potentials
-    assert pots == {1, 2, 3}
+    assert puzzle.ns[0].cell(0, 0).potentials == {1, 2, 3}

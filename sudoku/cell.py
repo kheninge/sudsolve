@@ -45,9 +45,7 @@ class Cell:
             "eliminate_visible": self._rule_elimination,
             "elimination_to_one": self._rule_elimination_to_one,
             "single_possible_location": self._rule_single_possible_location,
-            "matched_pairs": self._rule_matched_pairs,
-            "matched_triplets": self._rule_matched_triplets,
-            "matched_quads": self._rule_matched_quads,
+            "filled_cells": self._rule_filled_cells,
         }
         self.initialize(initial)
 
@@ -330,51 +328,41 @@ class Cell:
                     return True  # short circuit if solution found
         return False
 
-    def _rule_matched_pairs(self) -> bool:
-        return self._rule_matched_things(2)
-
-    def _rule_matched_triplets(self) -> bool:
-        return self._rule_matched_things(3)
-
-    def _rule_matched_quads(self) -> bool:
-        return self._rule_matched_things(4)
-
-    def _rule_matched_things(self, mode) -> bool:
-        """mode is 2 for pairs, 3 for triplets, 4 for quads etc"""
+    def _rule_filled_cells(self) -> bool:
+        """Any time you have 1 potential constrained to a single cell or 2 potentials constrained to 2 cells or n
+        potentials constrained to n cells then there is no room for any other potential in those cells.
+        This is a generalization of the single possible location rule. Note that this does not require that the
+        potentials show up in all n cells. So a triple, a double and a single that are constrained to 3 cells would
+        meet the criteria"""
         total_return = False
 
         for direction in CSPACES:
-            logger.debug("In rule_matched_pairs, direction is %s", direction)
-            pairs_set = self._gather_multiples(mode, direction)
-            total_num_pairs = len(pairs_set)
-            # 2 is the minimum that can match
-            if total_num_pairs < mode:
-                continue
-            # Check to see if subset number of pairs only shows up in that number of  cells. If so then they are "matched"
-            # e.g. 2 pairs that only potentially exist in 2 cells or 3 pairs that only potentially exist in 3 cells
-            for subset_num_pairs in range(mode, total_num_pairs + 1):
-                # For every number of pairs from 2 to number of pairs found pick a combination of N choose n
-                combinations = itertools.combinations(pairs_set, subset_num_pairs)
-                for combo in combinations:
+            # Build a list of cells - should think about doing this instead of linked list
+            cells = []
+            cell = self
+            while True:
+                if cell is None:
+                    raise Exception("Cell network is not set up correctly")
+                cells.append(cell)
+                cell = cell.traverse(direction)
+                if cell == self:
+                    break
+            potentials_set = set()
+            for cell in cells:
+                potentials_set |= cell.potentials
+            for n in range(1, len(potentials_set) + 1):
+                for combo in itertools.combinations(potentials_set, n):
+                    combo = set(combo)
                     matching_cells = []
-                    # TODO this traversal of the c space has to be generalized into a function of some sort
-                    cell = self
-                    while True:
-                        if cell is None:
-                            raise Exception("Cell network is not set up correctly")
+                    for cell in cells:
                         if cell.potentials.intersection(combo):
                             matching_cells.append(cell)
-                        cell = cell.traverse(direction)
-                        if cell == self:
-                            break
-                    if len(matching_cells) == subset_num_pairs:
+                    if len(matching_cells) == n:
                         # We have found a set of matched pairs, now go through each cell and eliminate any potential
                         # that is not part of the matched pair combination
                         for c in matching_cells:
-                            current_pots = c.potentials.copy()
-                            for p in current_pots:
-                                if p not in combo:
-                                    _ = c.remove_potential(p)
-                                    # success! we actually removed a potential
-                                    total_return |= True
+                            to_remove = c.potentials - combo
+                            for p in to_remove:
+                                _ = c.remove_potential(p)
+                                total_return |= True
         return total_return
