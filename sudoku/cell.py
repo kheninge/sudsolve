@@ -153,22 +153,30 @@ class Cell:
         """Check that current solution state is legal. Used to catch any logic problems early, shouldn't find them
         if there are no errors"""
 
+        all_is_good = True
         for direction in CSPACES:
-            solution_count = dict.fromkeys(SUD_RANGE, 0)
+            solution_set = dict.fromkeys(SUD_RANGE, None)
             cell = self
             while True:
                 if cell is None:
                     raise Exception("Cell network is not set up correctly")
                 if cell.solution:
-                    solution_count[cell.solution] += 1
+                    if solution_set[cell.solution]:
+                        cell._error = True
+                        solution_set[cell.solution]._error = True
+                        logger.error(
+                            "Found more than one solution for solution %d in in direction %s cell %d",
+                            cell.solution,
+                            direction,
+                            self.id,
+                        )
+                        all_is_good = False
+                    else:
+                        solution_set[cell.solution] = cell
                 cell = cell.traverse(direction)
                 if cell == self:
                     break
-            for i in solution_count:
-                if solution_count[i] > 1:
-                    logger.error("Found solution inconsistency for solution %d", i)
-                    return False
-        return True
+        return all_is_good
 
     def set_speculative_solution(self, val: int, history_mode: bool) -> None:
         self._speculative_solution = True
@@ -176,6 +184,7 @@ class Cell:
         if not history_mode:
             if self.history:
                 self.history.push_rule(f"speculative_solution:{self.id}:{val}")
+        self.check_consistency()
 
     def _set_solution(self, val: int) -> None:
         """Set the solution field. Clear the potentials field. Go through all visible c-spaces and remove solved value from their potentials"""

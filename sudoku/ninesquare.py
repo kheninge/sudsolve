@@ -94,8 +94,6 @@ class NineSquare:
         self.cells[8].connect("col", other.cell(0, 2))
 
     def check_consistency(self) -> bool:
-        # TODO need to figure out if this is needed and if so where/when to call it
-        return True
         total_result = True
         for i in range(SUD_SPACE_SIZE):
             total_result &= self.cells[i].check_consistency()

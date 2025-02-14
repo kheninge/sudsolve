@@ -29,26 +29,25 @@ class Sudoku:
     """
 
     def __init__(self) -> None:
-        self.init_val = None
         self._initial_state = True
         self._last_rule_progressed = False
         self.history = History()
-        self.ns: list[NineSquare] = []
-        for i in range(SUD_SPACE_SIZE):
-            self.ns.append(NineSquare(i, self.history))
+        self.ns: list[NineSquare] = [
+            NineSquare(i, self.history) for i in range(SUD_SPACE_SIZE)
+        ]
         self._connect_ninesquare_network()
 
     def _connect_ninesquare_network(self):
         # Connect up the rows
-        for i in (0, 3, 6):
-            self.ns[i].attach_row(self.ns[i + 1])
-            self.ns[i + 1].attach_row(self.ns[i + 2])
-            self.ns[i + 2].attach_row(self.ns[i])
+        for row_start in (0, 3, 6):
+            self.ns[row_start].attach_row(self.ns[row_start + 1])
+            self.ns[row_start + 1].attach_row(self.ns[row_start + 2])
+            self.ns[row_start + 2].attach_row(self.ns[row_start])  # circular
         # Connect up the columns
-        for i in range(3):
-            self.ns[i].attach_col(self.ns[i + 3])
-            self.ns[i + 3].attach_col(self.ns[i + 6])
-            self.ns[i + 6].attach_col(self.ns[i])
+        for col_start in range(3):
+            self.ns[col_start].attach_col(self.ns[col_start + 3])
+            self.ns[col_start + 3].attach_col(self.ns[col_start + 6])
+            self.ns[col_start + 6].attach_col(self.ns[col_start])  # circular
         # Run a quick check of the completed sudoku network from the cell perspective
         # if it fails it will trigger an exception, so the answer isn't really needed.
         # TODO this is wrong. it only runs network from 1 cell perspective. Also it means Sudoku has to understand
@@ -57,11 +56,7 @@ class Sudoku:
         for n in self.ns:
             n.create_sublines()
 
-    # TODO The following functions all do the same thing. Traverse the ninesquares calling this same function at that
-    # level. There has to be a way to collapse into one. The problem being run_rule needs to call update_potentials
-    # and consistency_check as a part of that algorithm. Needs some thought
     def check_consistency(self) -> bool:
-        return True
         total_result = True
         for i in range(SUD_SPACE_SIZE):
             total_result &= self.ns[i].check_consistency()
@@ -74,23 +69,21 @@ class Sudoku:
         logger.info(
             "Sudoku Class finishing elimination_to_one result is %d", total_result
         )
-        if not self.check_consistency():
-            raise Exception("update_all_potentials failed check_consistency")
         return total_result
 
     ## Public API
-    def load(self, init_val: PuzzleFormat):
-        self.init_val = init_val
+    def load(self, puzzle: PuzzleFormat):
+        self.puzzle = puzzle
 
     def initialize(self, history_mode=False) -> None:
         """Used to initialize state of the puzzle first time or to reset it for subsequent puzzles"""
-        if not self.init_val:
+        if not self.puzzle:
             logger.warning("initialize called without an init being loaded. Do nothing")
         else:
             if not history_mode:
                 self.history.clear()
             for i in range(SUD_SPACE_SIZE):
-                self.ns[i].initialize(self.init_val[i])
+                self.ns[i].initialize(self.puzzle[i])
             logger.info("Sudoku Class finished initialization")
         self._initial_state = True
 
@@ -113,8 +106,7 @@ class Sudoku:
             "Sudoku Class finishing elimination_to_one result is %d", total_result
         )
         self._last_rule_progressed = total_result
-        if not self.check_consistency():
-            raise Exception("%s failed check_consistency", rule)
+        _ = self.check_consistency()
         return total_result
 
     def replay_history(self, direction: str) -> bool:

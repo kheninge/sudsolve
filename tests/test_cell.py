@@ -45,6 +45,8 @@ def test_cell_invalid_init_0():
 def test_speculative_solution():
     history = History()
     my_cell = Cell(0, history)
+    for dir in my_cell._next.keys():
+        my_cell._next[dir] = my_cell
     my_cell.set_speculative_solution(6, False)
     assert my_cell.speculative_solution
     assert my_cell.solution == 6

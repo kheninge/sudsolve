@@ -109,16 +109,14 @@ class CellWidget(QStackedWidget):
         return f"border: 1px solid black; {background}font-size: {self.normal_font}px; color: {solution_font}"
 
     def update_cell(self):
-        if self.cell.in_error:
+        if self.cell.in_error or self.cell.solved:
             style = self._compose_style(self.cell)
             self.solved_view.setStyleSheet(style)
-            self.solved_view.setText("Err")
-            self.setCurrentIndex(1)
-        elif self.cell.solved or self.cell.in_error:
-            val = str(self.cell.solution)  # Labels take strings not int
-            self.solved_view.setText(val)
-            style = self._compose_style(self.cell)
-            self.solved_view.setStyleSheet(style)
+            if self.cell.solved:
+                val = str(self.cell.solution)  # Labels take strings not int
+                self.solved_view.setText(val)
+            else:
+                self.solved_view.setText(" ")
             self.setCurrentIndex(1)
         else:
             self.hint_wrapper.setStyleSheet(self.style_normal_background)
