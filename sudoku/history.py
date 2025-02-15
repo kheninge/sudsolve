@@ -1,12 +1,17 @@
+from sudoku.ruleengine import SudokuRule
+
+
 class History:
     START = -1
+    RULE = 0
+    PAYLOAD = 1
 
     def __init__(self) -> None:
-        self.rule_queue = []
+        self.rule_queue: list[SudokuRule] = []
         self.tail_ptr = self.START
         self.curr_ptr = self.START
 
-    def push_rule(self, rule: str) -> None:
+    def push_rule(self, rule: SudokuRule) -> None:
         self.rule_queue.insert(self.curr_ptr + 1, rule)
         self.tail_ptr += 1
         self.curr_ptr += 1
@@ -38,7 +43,7 @@ class History:
         out = []
         for i, rule in enumerate(self.rule_queue):
             curr_prefix = "c-> " if self.curr_ptr == i else "       "
-            out.insert(i, curr_prefix + rule)
+            out.insert(i, curr_prefix + rule.name)
         return out
 
     @property

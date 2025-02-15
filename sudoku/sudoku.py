@@ -2,6 +2,8 @@ import logging
 from sudoku.history import History
 from sudoku.ninesquare import NineSquare
 from sudoku.defines import PuzzleFormat, SUD_SPACE_SIZE
+from sudoku.ruleengine import RuleEngine
+from sudoku.rules import EliminationRule, SudokuRule
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +34,17 @@ class Sudoku:
         self._initial_state = True
         self._last_rule_progressed = False
         self.history = History()
-        self.ns: list[NineSquare] = [
-            NineSquare(i, self.history) for i in range(SUD_SPACE_SIZE)
-        ]
+        self.ns: list[NineSquare] = [NineSquare(i) for i in range(SUD_SPACE_SIZE)]
+        self.cells = []
+        self.sublines = []
+        for n in self.ns:
+            for c in n.cells:
+                self.cells.append(c)
         self._connect_ninesquare_network()
+        for n in self.ns:
+            for s in n.sublines:
+                self.sublines.append(s)
+        self.rule_engine: RuleEngine = RuleEngine(self.cells, self.sublines)
 
     def _connect_ninesquare_network(self):
         # Connect up the rows
@@ -48,27 +57,19 @@ class Sudoku:
             self.ns[col_start].attach_col(self.ns[col_start + 3])
             self.ns[col_start + 3].attach_col(self.ns[col_start + 6])
             self.ns[col_start + 6].attach_col(self.ns[col_start])  # circular
+        # Signal completion of the network to the cells
+        for c in self.cells:
+            c.network.completed_connection()
         # Run a quick check of the completed sudoku network from the cell perspective
         # if it fails it will trigger an exception, so the answer isn't really needed.
         # TODO this is wrong. it only runs network from 1 cell perspective. Also it means Sudoku has to understand
         # cell methods??
-        _ = self.ns[0].cell(0, 0).connection_ok
+        _ = self.ns[0].cell(0, 0).network.connection_ok
         for n in self.ns:
             n.create_sublines()
 
-    def _check_consistency(self) -> bool:
-        total_result = True
-        for i in range(SUD_SPACE_SIZE):
-            total_result &= self.ns[i].check_consistency()
-        return total_result
-
     def _update_all_potentials(self) -> bool:
-        total_result = False
-        for square in self.ns:
-            total_result |= square.run_rule("update_potentials")
-        logger.info(
-            "Sudoku Class finishing elimination_to_one result is %d", total_result
-        )
+        total_result = self.rule_engine.execute(EliminationRule("all"))
         return total_result
 
     ## Public API
@@ -87,26 +88,20 @@ class Sudoku:
             logger.info("Sudoku Class finished initialization")
         self._initial_state = True
 
-    def run_rule(self, rule: str, history_mode=False) -> bool:
+    def run_rule(self, rule: SudokuRule, history_mode=False) -> bool:
         """Wrapper to send the generic rule to each of the NineSquares"""
         logger.info("Sudoku Class starting rule %s", rule)
         self._initial_state = False
-        total_result = False
         # Need to clear this out here because want to capture the elimination from both the potential update
         # and the rule which gets run
-        for s in self.ns:
-            for c in s.cells:
-                c.clear_eliminated()
+        for c in self.cells:
+            c.clear_eliminated()
+            c.clear_new_solution()
         if not history_mode:
             self.history.push_rule(rule)
         _ = self._update_all_potentials()  # Do this for all cells before any rule runs
-        for square in self.ns:
-            total_result |= square.run_rule(rule)
-        logger.info(
-            "Sudoku Class finishing elimination_to_one result is %d", total_result
-        )
+        total_result = self.rule_engine.execute(rule)
         self._last_rule_progressed = total_result
-        _ = self._check_consistency()
         return total_result
 
     def replay_history(self, direction: str) -> bool:

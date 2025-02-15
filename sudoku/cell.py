@@ -1,21 +1,19 @@
 import logging
+from typing import cast
+from sudoku.cellnetwork import CellNetwork
 from sudoku.defines import (
     CellValType,
-    DirectionType,
     SUD_RANGE,
     CSPACES,
     SUD_VAL_START,
     SUD_VAL_END,
-    SUD_SPACE_SIZE,
 )
-from sudoku.history import History
-import itertools
-import re
+from sudoku.generic_structure import GenericStructure
 
 logger = logging.getLogger(__name__)
 
 
-class Cell:
+class Cell(GenericStructure):
     """Datastructure to represent the state of a single cell includes:
     * Initial state of the puzzle
     * Solved value
@@ -28,27 +26,38 @@ class Cell:
     *"""
 
     def __init__(
-        self, id: int = 0, history: History | None = None, initial: CellValType = None
+        self, id: int, network: CellNetwork, initial: CellValType = None
     ) -> None:
-        self.id: int = id
-        self.history = history
+        # TODO can't we just call intialize and get rid of all this stuff?
         self._check_cell_param_is_legal(initial)
+        self.id: int = id
+        self.network = network
+        self.network.home_node(self)
         self._solved_value: CellValType = None
         self._new_solution: bool = False
         self._speculative_solution: bool = False
         self._error: bool = False
         self._potentials: set[int] = set(SUD_RANGE)
         self._eliminated = set()
-        self._next: dict[DirectionType, Cell | None] = dict.fromkeys(CSPACES)
-        self.rules = {
-            "update_potentials": self._update_potentials,
-            "eliminate_visible": self._rule_elimination,
-            "elimination_to_one": self._rule_elimination_to_one,
-            "single_possible_location": self._rule_single_possible_location,
-            "filled_cells": self._rule_filled_cells,
-            "filled_potentials": self._rule_filled_potentials,
-        }
         self.initialize(initial)
+
+    def initialize(self, val: CellValType) -> None:
+        """cell can be initialized to a digit 1 - 9 or to None"""
+        logger.debug("Init is called for Cell %d", self.id)
+        self._check_cell_param_is_legal(val)
+        self._speculative_solution = False
+        self._error = False
+        if val is not None:
+            self._initial_value = val
+            # Can't  just call set_solution here as network isn't guarenteed to be set up yet
+            self._solved_value = val
+            self.clear_potentials()
+        else:
+            self._initial_value = None
+            self._solved_value = None
+            self._potentials = set(SUD_RANGE)
+        self.clear_eliminated()
+        self.clear_new_solution()
 
     def _check_cell_param_is_legal(self, val: CellValType) -> None:
         """cell can be initialized to a digit 1 - 9 or to None
@@ -59,32 +68,6 @@ class Cell:
             if val < SUD_VAL_START or val > SUD_VAL_END:
                 logger.debug("Cell Value %d for cell id %d is illegal", val, self.id)
                 raise ValueError
-
-    def _check_network_connectivity(self) -> bool:
-        """Check to make sure everything is connected properly for this cell; make sure no endless loops
-        on network traversals."""
-        # Iterate over row, col and square.
-        for direction in CSPACES:
-            cell = self
-            count = 0
-            while True:
-                cell = cell.traverse(direction)
-                count += 1
-                ## Error condition, should never be more than 9 cells in a loop
-                if count > SUD_SPACE_SIZE:
-                    logger.error(
-                        "Cell %d is looping more than 9 times for %s direction",
-                        self.id,
-                        direction,
-                    )
-                    raise Exception("Elimination_to_one has an infinite loop")
-                if cell == self:
-                    break
-        return True
-
-    @property
-    def connection_ok(self) -> bool:
-        return self._check_network_connectivity()
 
     @property
     def solved(self) -> bool:
@@ -102,16 +85,13 @@ class Cell:
     def speculative_solution(self) -> bool:
         return self._speculative_solution
 
+    @speculative_solution.setter
+    def speculative_solution(self, val):
+        self._speculative_solution = True
+        self.set_solution(val)
+
     def clear_new_solution(self) -> None:
         self._new_solution = False
-
-    def connect(self, direction: DirectionType, cell: "Cell") -> None:
-        self._next[direction] = cell
-
-    def traverse(self, direction: DirectionType) -> "Cell":
-        if self._next[direction] is None:
-            raise Exception("Cell network is not set up correctly")
-        return self._next[direction]  # type: ignore
 
     @property
     def solution(self) -> CellValType:
@@ -172,234 +152,25 @@ class Cell:
                         all_is_good = False
                     else:
                         solution_set[cell.solution] = cell
-                cell = cell.traverse(direction)
+                cell = cast(Cell, cell.network.traverse(direction))
                 if cell == self:
                     break
         return all_is_good
 
-    def set_speculative_solution(self, val: int, history_mode: bool) -> None:
-        self._speculative_solution = True
-        self._set_solution(val)
-        if not history_mode:
-            if self.history:
-                self.history.push_rule(f"speculative_solution:{self.id}:{val}")
-        self.check_consistency()
-
-    def _set_solution(self, val: int) -> None:
+    def set_solution(self, val: int) -> None:
         """Set the solution field. Clear the potentials field. Go through all visible c-spaces and remove solved value from their potentials"""
+        self._check_cell_param_is_legal(val)
         self._solved_value = val
         self._new_solution = True
         self.clear_potentials()
+        self.check_consistency()  # TODO if this is done here, can I remove other calls?
         logger.info("Cell %d: Solution found: %d", self.id, self._solved_value)
 
-    def _remove_potential_in_cspaces(self, val: int) -> None:
+    def remove_potential_in_cspaces(self, val: int) -> None:
         for direction in CSPACES:
-            cell = self.traverse(direction)
-            while cell != self:
-                if cell is None:
-                    raise Exception("Cell network is not set up correctly")
+            for cell in self.network.clist[direction]:
                 if not cell.solved:
                     _ = cell.remove_potential(val)
                     # If all potentials are gone something is wrong mark the cell in error
                     if not cell.potentials:
                         cell._error = True
-                cell = cell.traverse(direction)
-
-    def initialize(self, val: CellValType) -> None:
-        """cell can be initialized to a digit 1 - 9 or to None"""
-        logger.debug("Init is called for Cell %d", self.id)
-        self._check_cell_param_is_legal(val)
-        self._speculative_solution = False
-        self._error = False
-        if val is not None:
-            self._initial_value = val
-            # Can't  just call _set_solution here as network isn't guarenteed to be set up yet
-            self._solved_value = val
-            self.clear_potentials()
-        else:
-            self._initial_value = None
-            self._solved_value = None
-            self._potentials = set(SUD_RANGE)
-        self.clear_eliminated()
-        self.clear_new_solution()
-
-    def _update_potentials(self) -> bool:
-        """Loop through all cstates and remove potentials from the list for any present
-        This is the first step before any rule, so making this a seperate function so it can be called by each
-        rule"""
-
-        potential_starting_len = len(self.potentials)
-        for direction in CSPACES:
-            cell = self.traverse(direction)
-            while cell != self:
-                if cell.solution:
-                    _ = self.remove_potential(cell.solution)
-                cell = cell.traverse(direction)
-            # If all potentials are gone something is wrong mark the cell in error
-            if not self.potentials:
-                self._error = True
-        if len(self._potentials) < potential_starting_len:
-            logger.debug("Cell %d made progress on potentials", self.id)
-            return True
-        else:
-            return False
-
-    def _gather_multiples(self, mode: int, direction: DirectionType) -> set[int]:
-        """Traverse the space looking for mode number of occurences in potentials i.e. singles, pairs, triplets etc
-        Returns a set of those potentials"""
-        pot_count = dict.fromkeys(SUD_RANGE, 0)
-        pot_list = set()
-        cell = self
-        while True:
-            for num in cell.potentials:
-                pot_count[num] += 1
-            cell = cell.traverse(direction)
-            if cell == self:
-                break
-        # Analyze potential_count statistics to see if there are any unique (just one) potential
-        # If so then build a list of those numbers
-        for num, count in pot_count.items():
-            if count == mode:
-                pot_list.add(num)
-        return pot_list
-
-    def run_rule(self, rule: str) -> bool:
-        """Wrapper for running rules listed in rule"""
-        # Special case - speculative_solution, not really a rule
-        if "speculative_solution" in rule:
-            return self._replay_speculative_solution(rule)
-        self.clear_new_solution()
-        if rule not in self.rules.keys():
-            logger.error("In run_rule, %s rule is called but not defined", rule)
-            raise Exception("Undefine rule called")
-
-        if self.solution:
-            # Already solved
-            return False
-
-        # TODO is this needed other than the first time? Since the rules themselves update potentials whenever a
-        # solution is found?
-        _ = self._update_potentials()
-        return self.rules[rule]()
-
-    def _replay_speculative_solution(self, rule) -> bool:
-        match = re.search(r"speculative_solution:(\d+):(\d+)", rule)
-        if match:
-            id = int(match.group(1))
-            val = int(match.group(2))
-        else:
-            raise Exception("specultive solution replay error")
-        if self.id == id:
-            self.set_speculative_solution(val, history_mode=True)
-            return True
-        else:
-            return False
-
-    def _rule_elimination(self) -> bool:
-        """Eliminate all solutions seen in constrained spaces. This step is run for every rule, but in this case
-        just run the elimination step"""
-        progress = False
-        return progress
-
-    def _rule_elimination_to_one(self) -> bool:
-        """Eliminate all solutions seen in constrained spaces and if a single potential is left designate it
-        the solution"""
-        progress = False
-        if len(self._potentials) == 1:
-            # Solved
-            mysolution = self._potentials.pop()
-            self._set_solution(mysolution)
-            self._remove_potential_in_cspaces(mysolution)
-            progress = True
-
-        return progress
-
-    def _rule_single_possible_location(self) -> bool:
-        """Look through potentials determined by other rules. If a potential number is only present within this cell
-        for a given constrained space, then that is the solution"""
-
-        # Iterate over row, col and square.
-        for direction in CSPACES:
-            singles_set = self._gather_multiples(1, direction)
-            # Now see if any of our cell potentials is in the list, if so set it as the solution
-            for num in self.potentials:
-                if num in singles_set:
-                    self._set_solution(num)
-                    self._remove_potential_in_cspaces(num)
-                    return True  # short circuit if solution found
-        return False
-
-    def _rule_filled_cells(self) -> bool:
-        """Any time you have 1 potential constrained to a single cell or 2 potentials constrained to 2 cells or n
-        potentials constrained to n cells then there is no room for any other potential in those cells.
-        This is a generalization of the single possible location rule. Note that this does not require that the
-        potentials show up in all n cells. So a triple, a double and a single that are constrained to 3 cells would
-        meet the criteria"""
-        total_return = False
-
-        for direction in CSPACES:
-            # Build a list of cells - should think about doing this instead of linked list
-            cells = []
-            cell = self
-            while True:
-                if cell is None:
-                    raise Exception("Cell network is not set up correctly")
-                cells.append(cell)
-                cell = cell.traverse(direction)
-                if cell == self:
-                    break
-            potentials_set = set()
-            for cell in cells:
-                potentials_set |= cell.potentials
-            for n in range(1, len(potentials_set) + 1):
-                for combo in itertools.combinations(potentials_set, n):
-                    combo = set(combo)
-                    matching_cells = []
-                    for cell in cells:
-                        if cell.potentials & combo:
-                            matching_cells.append(cell)
-                    if len(matching_cells) == n:
-                        # We have found a set of matched pairs, now go through each cell and eliminate any potential
-                        # that is not part of the matched pair combination
-                        for cell in matching_cells:
-                            to_remove = cell.potentials - combo
-                            for p in to_remove:
-                                _ = cell.remove_potential(p)
-                                total_return |= True
-        return total_return
-
-    def _rule_filled_potentials(self) -> bool:
-        """This rule relies on the same premise as filled_cells, that n values constrained to n cells is full and
-        there is no more room. Filled potentials is the inferred opposite, if you find any n cells that only contain
-        n potential values then you can assume those potential values will not be seen in the other cells. This is
-        the general case of the eliminate to one rule as that rule is just the 1 value in 1 cell case.
-        """
-        total_return = False
-
-        for direction in CSPACES:
-            # Build a list of unsolved cells
-            unsolved_cells = []
-            cell = self
-            while True:
-                if cell is None:
-                    raise Exception("Cell network is not set up correctly")
-                if not cell.solved:
-                    unsolved_cells.append(cell)
-                cell = cell.traverse(direction)
-                if cell == self:
-                    break
-            for n in range(1, len(unsolved_cells) + 1):
-                for combo in itertools.combinations(unsolved_cells, n):
-                    potentials_set = set()
-                    for cell in combo:
-                        potentials_set |= cell.potentials
-                    if len(potentials_set) == len(combo):
-                        # We have found a set of matched pairs, now go through each cell not in the combo and
-                        # eliminate any potential from the combo
-                        for cell in unsolved_cells:
-                            if cell in combo:
-                                continue
-                            for p in potentials_set:
-                                progress = cell.remove_potential(p)
-                                total_return |= progress
-        return total_return

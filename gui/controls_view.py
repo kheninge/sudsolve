@@ -30,7 +30,7 @@ class ControlsView(QWidget):
         self.right_docker = docker
         self.puzzles_dict = puzzles_dict
         self.control_height = sizer.app_width / 30
-        self.control_width = sizer.app_width / 12
+        self.control_width = sizer.app_width / 9
         self.rule_width = int(sizer.app_width / 7)
 
         # Create the Control and Rule Buttons

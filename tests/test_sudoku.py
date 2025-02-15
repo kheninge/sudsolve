@@ -1,5 +1,10 @@
 import pytest
 from sudoku.sudoku import Sudoku
+from sudoku.rules import (
+    EliminationToOneRule,
+    FilledCellsRule,
+    SinglePossibleLocationRule,
+)
 
 
 def test_sudoku_initialize_and_solutions_match():
@@ -63,12 +68,10 @@ def test_sudoku_elimination_to_one():
     )
     puzzle.load(init1)
     puzzle.initialize()
-    progress = puzzle.run_rule("elimination_to_one")
+    progress = puzzle.run_rule(EliminationToOneRule("all"))
     assert progress
     assert puzzle.ns[0].cells[1].eliminated == {1, 2, 5, 6, 7, 8, 9}
     sols = puzzle._solutions
-    # print("KHH")
-    # print(sols)
     assert sols == sols1
 
 
@@ -89,10 +92,10 @@ def test_sudoku_single_possible_location():
     )
     puzzle.load(init1)
     puzzle.initialize()
-    progress = puzzle.run_rule("elimination_to_one")
+    progress = puzzle.run_rule(EliminationToOneRule("all"))
     assert progress
     assert puzzle.last_rule_progressed
-    progress = puzzle.run_rule("single_possible_location")
+    progress = puzzle.run_rule(SinglePossibleLocationRule("all"))
     assert progress
     assert puzzle.last_rule_progressed
     sols = puzzle._solutions
@@ -118,11 +121,11 @@ def test_sudoku_simple_solved_after_multiple_calls():
     progress = True
     assert not puzzle.solved
     while progress:
-        progress = puzzle.run_rule("elimination_to_one")
+        progress = puzzle.run_rule(EliminationToOneRule("all"))
     progress = True
     assert not puzzle.solved
     while progress:
-        progress = puzzle.run_rule("single_possible_location")
+        progress = puzzle.run_rule(SinglePossibleLocationRule("all"))
     assert puzzle.solved
     sols = puzzle._solutions
     assert sols == (
@@ -155,12 +158,12 @@ def test_sudoku_simple_solved_replay():
     puzzle.load(init1)
     assert not puzzle.solved
     puzzle.initialize()
-    progress = puzzle.run_rule("elimination_to_one")
+    progress = puzzle.run_rule(EliminationToOneRule("all"))
     assert progress
     chkpnt1 = puzzle._solutions
-    progress = puzzle.run_rule("elimination_to_one")
+    progress = puzzle.run_rule(EliminationToOneRule("all"))
     chkpnt2 = puzzle._solutions
-    progress = puzzle.run_rule("single_possible_location")
+    progress = puzzle.run_rule(SinglePossibleLocationRule("all"))
     chkpnt3 = puzzle._solutions
     progress = puzzle.replay_history("back")
     assert puzzle._solutions == chkpnt2
@@ -194,12 +197,12 @@ def test_sudoku_with_Daniel():
     puzzle.initialize()
     progress = True
     while progress:
-        progress = puzzle.run_rule("elimination_to_one")
+        progress = puzzle.run_rule(EliminationToOneRule("all"))
     print("After step 1")
     print(puzzle._solutions)
     progress = True
     while progress:
-        progress = puzzle.run_rule("single_possible_location")
+        progress = puzzle.run_rule(SinglePossibleLocationRule("all"))
     print("After step 2")
     print(puzzle._solutions)
 
@@ -220,7 +223,7 @@ def test_sudoku_filled_cells_single_pair():
     )
     puzzle.load(init1)
     puzzle.initialize()
-    progress = puzzle.run_rule("filled_cells")
+    progress = puzzle.run_rule(FilledCellsRule("all"))
     assert progress
     pots = puzzle.ns[0].cell(1, 1).potentials
     assert pots == {1, 2}
@@ -242,7 +245,7 @@ def test_sudoku_matched_pairs_four_pairs():
     )
     puzzle.load(init1)
     puzzle.initialize()
-    progress = puzzle.run_rule("filled_cells")
+    progress = puzzle.run_rule(FilledCellsRule("all"))
     assert progress
     pots = puzzle.ns[0].cell(1, 2).potentials
     assert pots == {1, 7}
@@ -266,7 +269,7 @@ def test_sudoku_matched_pairs_four_pairs_only_two_matched():
     )
     puzzle.load(init1)
     puzzle.initialize()
-    progress = puzzle.run_rule("filled_cells")
+    progress = puzzle.run_rule(FilledCellsRule("all"))
     assert progress
     assert puzzle.ns[0].cell(0, 0).potentials == {1, 5}
     assert puzzle.ns[0].cell(0, 1).potentials == {1, 5}
@@ -288,6 +291,6 @@ def test_sudoku_matched_triplets():
     )
     puzzle.load(init1)
     puzzle.initialize()
-    progress = puzzle.run_rule("filled_cells")
+    progress = puzzle.run_rule(FilledCellsRule("all"))
     assert progress
     assert puzzle.ns[0].cell(0, 0).potentials == {1, 2, 3}

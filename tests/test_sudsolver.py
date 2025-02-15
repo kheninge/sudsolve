@@ -5,7 +5,7 @@ import sudsolver
 
 @pytest.fixture()
 def open_yaml():
-    with open("sudoku.yaml", "r") as file:
+    with open("../sudoku.yaml", "r") as file:
         stored_puzzles = yaml.safe_load(file)
     yield stored_puzzles
 

@@ -7,12 +7,13 @@ from gui.history_docker import RightDocker
 from gui.controls_view import ControlsView
 from gui.sudoku_game_views import SudokuView
 from sudoku.sudoku import Sudoku, PuzzleFormat
+import sudoku.rules
 from gui.update_controller import UpdateController
 
 from gui.main_view import SSolveMain
 
 TITLE = "Sudoku Assistant"
-WIDTH_RATIO = 0.4
+WIDTH_RATIO = 0.45
 
 
 class GuiTop:
@@ -30,7 +31,7 @@ class GuiTop:
         self.sizes = FixedSizeControl(self.app, WIDTH_RATIO)
         self.updater = UpdateController()
         # Instantiate GUI Pieces
-        self.puzzle_widget = SudokuView(self.sudoku, self.updater)
+        self.puzzle_widget = SudokuView(self.sudoku, self.updater, self.sizes)
         self.right_docker = RightDocker(self.sudoku)
         self.control_widget = ControlsView(
             self.sudoku,
@@ -122,7 +123,22 @@ class GuiTop:
         self.updater.updated.emit()
 
     def run_rule(self, rule: str) -> None:
-        self.sudoku.run_rule(rule)
+        match rule:
+            case "eliminate_visible":
+                sudoku_rule = sudoku.rules.EliminationRule("all")
+            case "elimination_to_one":
+                sudoku_rule = sudoku.rules.EliminationToOneRule("all")
+            case "single_possible_location":
+                sudoku_rule = sudoku.rules.SinglePossibleLocationRule("all")
+            case "filled_cells":
+                sudoku_rule = sudoku.rules.FilledCellsRule("all")
+            case "filled_potentials":
+                sudoku_rule = sudoku.rules.FilledPotentialsRule("all")
+            case "aligned_potentials":
+                sudoku_rule = sudoku.rules.AlignedPotentialsRule("all")
+            case _:
+                raise Exception("Invalid Rule")
+        self.sudoku.run_rule(sudoku_rule)
         self.updater.updated.emit()
 
     def back(self):

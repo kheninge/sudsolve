@@ -9,17 +9,21 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QContextMenuEvent
+from gui.fixed_size_control import FixedSizeControl
 from gui.update_controller import UpdateController
 from sudoku.sudoku import Sudoku
 from sudoku.ninesquare import NineSquare
 from sudoku.cell import Cell
+from sudoku.rules import SpeculativeSolution
 
 COLOR_YELLOW = "#f4f8b2"
 COLOR_RED = "red"
 
 
 class SudokuView(QWidget):
-    def __init__(self, sudoku: Sudoku, updater: UpdateController) -> None:
+    def __init__(
+        self, sudoku: Sudoku, updater: UpdateController, sizes: FixedSizeControl
+    ) -> None:
         super().__init__()
         self.sudoku = sudoku
         self.ns = []  # Keep a list of nine-squares
@@ -28,7 +32,9 @@ class SudokuView(QWidget):
         layout = QGridLayout()
         for i in range(3):
             for j in range(3):
-                widget = NineSquareView(self, sudoku.ns[i * 3 + j], updater)
+                widget = NineSquareView(
+                    self, sudoku, sudoku.ns[i * 3 + j], updater, sizes
+                )
                 self.ns.append(widget)
                 layout.addWidget(widget, i, j)
         self.setLayout(layout)
@@ -40,7 +46,12 @@ class SudokuView(QWidget):
 
 class NineSquareView(QWidget):
     def __init__(
-        self, parent, ninesquare: NineSquare, updater: UpdateController
+        self,
+        parent,
+        sudoku: Sudoku,
+        ninesquare: NineSquare,
+        updater: UpdateController,
+        sizes: FixedSizeControl,
     ) -> None:
         super().__init__(parent)
 
@@ -51,7 +62,7 @@ class NineSquareView(QWidget):
         for i in range(3):
             for j in range(3):
                 cell_widget = CellWidget(
-                    self, self.ninesquare.cells[i * 3 + j], updater
+                    self, sudoku, self.ninesquare.cells[i * 3 + j], updater, sizes
                 )
                 self.cells.append(cell_widget)
                 layout.addWidget(cell_widget, i, j)
@@ -66,12 +77,19 @@ class NineSquareView(QWidget):
 
 
 class CellWidget(QStackedWidget):
-    def __init__(self, parent, cell, updater: UpdateController) -> None:
+    def __init__(
+        self,
+        parent,
+        sudoku: Sudoku,
+        cell,
+        updater: UpdateController,
+        sizes: FixedSizeControl,
+    ) -> None:
         super().__init__(parent)
         self.cell = cell
-        cell_dim = self.width()
+        cell_dim = int(sizes.app_width * 0.09)
         # Hints cells are kind of squished to the left so 1/2 just gives more room in the case of a 2 pixel remainder
-        hint_dim = int(cell_dim * 0.40)
+        hint_dim = int(cell_dim * 0.20)
         self.setFixedHeight(cell_dim)
         self.normal_font = int(cell_dim * 0.6)
         hint_font = int(cell_dim * 0.15)
@@ -84,7 +102,7 @@ class CellWidget(QStackedWidget):
         self.style_hints_yellow_no_border = f"background-color: {COLOR_YELLOW};border: none; color: gray; font-size: {hint_font}px;"
         self.hint_wrapper = QWidget()
         self.hint_wrapper.setStyleSheet(self.style_normal_background)
-        self.hint_view = HintsWidget(hint_dim, self.cell, updater)
+        self.hint_view = HintsWidget(sudoku, hint_dim, self.cell, updater)
         self.hint_view.setParent(self.hint_wrapper)
         self.hint_view.setStyleSheet(self.style_hints_normal_no_border)
         self.solved_view = QLabel()
@@ -139,9 +157,12 @@ class HintsWidget(QWidget):
     style_hints_normal_no_border = "border: none; "
     style_hints_yellow_no_border = f"background-color: {COLOR_YELLOW};border: none; "
 
-    def __init__(self, dim: int, cell: Cell, updater: UpdateController) -> None:
+    def __init__(
+        self, sudoku: Sudoku, dim: int, cell: Cell, updater: UpdateController
+    ) -> None:
         super().__init__()
         self.cell = cell
+        self.sudoku = sudoku
         self.updater = updater
         self.hint = []
         rows = []
@@ -175,5 +196,6 @@ class HintsWidget(QWidget):
 
         action = context_menu.exec(event.globalPos())
         if action in actions:
-            self.cell.set_speculative_solution(actions[action], history_mode=False)
+            rule = SpeculativeSolution(self.cell.id, actions[action])
+            self.sudoku.run_rule(rule)
             self.updater.updated.emit()

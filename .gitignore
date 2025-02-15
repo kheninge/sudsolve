@@ -2,3 +2,4 @@ __pycache__
 pytest.log
 sudsolver.bin
 sudsolver.dist
+profile*
