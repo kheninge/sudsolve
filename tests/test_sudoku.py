@@ -18,7 +18,7 @@ def test_sudoku_initialize_and_solutions_match():
     puzzle = Sudoku()
     puzzle.load(init1)
     puzzle.initialize()
-    sols = puzzle.solutions
+    sols = puzzle._solutions
     assert sols == init1
 
 
@@ -66,7 +66,7 @@ def test_sudoku_elimination_to_one():
     progress = puzzle.run_rule("elimination_to_one")
     assert progress
     assert puzzle.ns[0].cells[1].eliminated == {1, 2, 5, 6, 7, 8, 9}
-    sols = puzzle.solutions
+    sols = puzzle._solutions
     # print("KHH")
     # print(sols)
     assert sols == sols1
@@ -95,7 +95,7 @@ def test_sudoku_single_possible_location():
     progress = puzzle.run_rule("single_possible_location")
     assert progress
     assert puzzle.last_rule_progressed
-    sols = puzzle.solutions
+    sols = puzzle._solutions
     assert sols[0] == (2, 4, None, 5, 7, 6, 9, 1, 8)
 
 
@@ -124,7 +124,7 @@ def test_sudoku_simple_solved_after_multiple_calls():
     while progress:
         progress = puzzle.run_rule("single_possible_location")
     assert puzzle.solved
-    sols = puzzle.solutions
+    sols = puzzle._solutions
     assert sols == (
         (2, 4, 3, 5, 7, 6, 9, 1, 8),
         (9, 7, 1, 3, 8, 4, 2, 5, 6),
@@ -157,23 +157,23 @@ def test_sudoku_simple_solved_replay():
     puzzle.initialize()
     progress = puzzle.run_rule("elimination_to_one")
     assert progress
-    chkpnt1 = puzzle.solutions
+    chkpnt1 = puzzle._solutions
     progress = puzzle.run_rule("elimination_to_one")
-    chkpnt2 = puzzle.solutions
+    chkpnt2 = puzzle._solutions
     progress = puzzle.run_rule("single_possible_location")
-    chkpnt3 = puzzle.solutions
+    chkpnt3 = puzzle._solutions
     progress = puzzle.replay_history("back")
-    assert puzzle.solutions == chkpnt2
+    assert puzzle._solutions == chkpnt2
     progress = puzzle.replay_history("back")
-    assert puzzle.solutions == chkpnt1
+    assert puzzle._solutions == chkpnt1
     progress = puzzle.replay_history("back")
-    assert puzzle.solutions == init1
+    assert puzzle._solutions == init1
     progress = puzzle.replay_history("forward")
-    assert puzzle.solutions == chkpnt1
+    assert puzzle._solutions == chkpnt1
     progress = puzzle.replay_history("forward")
-    assert puzzle.solutions == chkpnt2
+    assert puzzle._solutions == chkpnt2
     progress = puzzle.replay_history("forward")
-    assert puzzle.solutions == chkpnt3
+    assert puzzle._solutions == chkpnt3
 
 
 def test_sudoku_with_Daniel():
@@ -196,12 +196,12 @@ def test_sudoku_with_Daniel():
     while progress:
         progress = puzzle.run_rule("elimination_to_one")
     print("After step 1")
-    print(puzzle.solutions)
+    print(puzzle._solutions)
     progress = True
     while progress:
         progress = puzzle.run_rule("single_possible_location")
     print("After step 2")
-    print(puzzle.solutions)
+    print(puzzle._solutions)
 
 
 def test_sudoku_filled_cells_single_pair():

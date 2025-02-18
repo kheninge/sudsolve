@@ -56,7 +56,7 @@ class Sudoku:
         for n in self.ns:
             n.create_sublines()
 
-    def check_consistency(self) -> bool:
+    def _check_consistency(self) -> bool:
         total_result = True
         for i in range(SUD_SPACE_SIZE):
             total_result &= self.ns[i].check_consistency()
@@ -106,7 +106,7 @@ class Sudoku:
             "Sudoku Class finishing elimination_to_one result is %d", total_result
         )
         self._last_rule_progressed = total_result
-        _ = self.check_consistency()
+        _ = self._check_consistency()
         return total_result
 
     def replay_history(self, direction: str) -> bool:
@@ -147,8 +147,9 @@ class Sudoku:
         """True if puzzle is still in the initial state and no rules run"""
         return self._initial_state
 
+    # This is only used by the tests. The gui gets solutions directly from cell
     @property
-    def solutions(self) -> PuzzleFormat:
+    def _solutions(self) -> PuzzleFormat:
         sols = []
         for i in range(SUD_SPACE_SIZE):
             sols.append(self.ns[i].solutions)
