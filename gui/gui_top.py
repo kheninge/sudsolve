@@ -21,13 +21,14 @@ class GuiTop:
 
     def __init__(
         self,
+        app: QApplication,
         sudoku: Sudoku,
         puzzles_dict: dict[str, PuzzleFormat],
     ) -> None:
         super().__init__()
         self.sudoku = sudoku
         self.puzzles_dict = puzzles_dict
-        self.app = QApplication()
+        self.app = app
         self.sizes = FixedSizeControl(self.app, WIDTH_RATIO)
         self.updater = UpdateController()
         # Instantiate GUI Pieces

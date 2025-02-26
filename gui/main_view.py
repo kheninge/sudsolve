@@ -21,6 +21,7 @@ class SSolveMain(QMainWindow):
         super().__init__()
 
         # Define Layout
+        self.control_widget = control_widget
         layout = QVBoxLayout()
         layout.addWidget(puzzle_widget)
         layout.addWidget(control_widget)

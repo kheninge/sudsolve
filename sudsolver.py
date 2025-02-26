@@ -7,6 +7,7 @@
 #
 # Linux Compile command: python3 -m nuitka sudsolver.py
 
+from PySide6.QtWidgets import QApplication
 from gui.gui_top import GuiTop
 from sudoku.sudoku import Sudoku, PuzzleFormat
 import yaml
@@ -25,7 +26,8 @@ def main():
     # Model/Control
     solver = Sudoku()
     # Gui
-    gui = GuiTop(solver, puzzles_ninesquare_fmt)
+    app = QApplication()
+    gui = GuiTop(app, solver, puzzles_ninesquare_fmt)
     gui.start()
 
 

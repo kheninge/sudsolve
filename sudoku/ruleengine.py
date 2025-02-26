@@ -15,6 +15,7 @@ class RuleEngine:
         self.sublines = sublines
 
     def execute(self, rule: SudokuRule) -> bool:
+        logger.info("RuleEngine starting rule %s", rule.name)
         if rule.structure_type == "cell":
             target_list = self.cells
         elif rule.structure_type == "subline":
