@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QToolButton,
     QStyle,
+    QMessageBox,
 )
 from PySide6.QtCore import Qt, Signal, QSize
 
@@ -163,16 +164,26 @@ class PuzzleListWidget(QDialog):
     def delete_item(self, item):
         """Delete the specified item from the list"""
         row = self.item_list.row(item)
-        deleted_puzzle = self.item_list.takeItem(row)
+        deleted_puzzle = self.item_list.item(row)
         item_text = deleted_puzzle.data(Qt.ItemDataRole.UserRole)
-        self.puzzles.delete(item_text)
-        self.puzzles.update()
+        reply = QMessageBox.question(
+            self,
+            "Confirm Deletion",
+            f"Delete {item_text}?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            # Delete the item
+            self.puzzles.delete(item_text)
+            self.puzzles.update()
 
-        # Update preview if the currently selected item was deleted
-        current = self.item_list.currentItem()
-        if not current:
-            self.preview_area.setText("No item selected")
-            self.load_button.setEnabled(False)
+            deleted_puzzle = self.item_list.takeItem(row)
+            # Update preview if the currently selected item was deleted
+            current = self.item_list.currentItem()
+            if not current:
+                self.preview_area.setText("No item selected")
+                self.load_button.setEnabled(False)
 
     def filter_items(self, text):
         """Filter the items in the list based on search text"""

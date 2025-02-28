@@ -82,9 +82,9 @@ class GuiTop:
         self.control_widget.controls["close"].clicked.connect(self.app.quit)
         self.control_widget.controls["start"].clicked.connect(self.initialize)
         self.control_widget.controls["add"].clicked.connect(self.open_puzzle_dialog)
-        self.control_widget.controls["new_puzzle"].textActivated.connect(
-            self.load_puzzle
-        )
+        # self.control_widget.controls["new_puzzle"].textActivated.connect(
+        #     self.load_puzzle
+        # )
         self.control_widget.controls["history"].clicked.connect(
             self.toggle_history_dock
         )

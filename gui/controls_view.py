@@ -36,14 +36,14 @@ class ControlsView(QWidget):
 
         # Create the Control and Rule Buttons
         self.controls = {
-            "new_puzzle": QComboBox(),
+            # "new_puzzle": QComboBox(),
             "add": QPushButton("Add Puzzle (a)"),
             "start": QPushButton("Re-Start (r)"),
             "close": QPushButton("Exit (q)"),
             "history": QPushButton("History (h)"),
         }
-        self.controls["new_puzzle"].setPlaceholderText("Choose a Puzzle")
-        self.controls["new_puzzle"].addItems(puzzles_list.puzzles.keys())
+        # self.controls["new_puzzle"].setPlaceholderText("Choose a Puzzle")
+        # self.controls["new_puzzle"].addItems(puzzles_list.puzzles.keys())
         # Size the buttons
         for contr in self.controls:
             self.controls[contr].setFixedSize(self.control_width, self.control_height)
