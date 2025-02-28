@@ -6,6 +6,7 @@ from gui.fixed_size_control import FixedSizeControl
 from gui.history_docker import RightDocker
 from gui.controls_view import ControlsView
 from gui.sudoku_game_views import SudokuView
+from gui.puzzle_list_widget import PuzzleListWidget
 from sudoku.sudoku import Sudoku
 from sudoku.puzzleio import PuzzleList
 import sudoku.rules
@@ -33,7 +34,7 @@ class GuiTop:
         self.sizes = FixedSizeControl(self.app, WIDTH_RATIO)
         self.updater = UpdateController()
         # Instantiate GUI Pieces
-        self.puzzle_widget = SudokuView(self.sudoku, self.updater, self.sizes)
+        self.game_widget = SudokuView(self.sudoku, self.updater, self.sizes)
         self.right_docker = RightDocker(self.sudoku)
         self.control_widget = ControlsView(
             self.sudoku,
@@ -42,7 +43,7 @@ class GuiTop:
             self.right_docker,
         )
         self.main_widget = SSolveMain(
-            self.puzzle_widget,
+            self.game_widget,
             self.right_docker,
             self.control_widget,
             self.sizes,
@@ -57,6 +58,7 @@ class GuiTop:
     def _define_shortcuts(self):
         # Define Shortcuts
         shortcuts = {
+            "a": self.open_puzzle_dialog,
             "q": self.app.quit,
             "x": self.app.quit,
             "r": self.initialize,
@@ -79,6 +81,7 @@ class GuiTop:
         # Control Buttons
         self.control_widget.controls["close"].clicked.connect(self.app.quit)
         self.control_widget.controls["start"].clicked.connect(self.initialize)
+        self.control_widget.controls["add"].clicked.connect(self.open_puzzle_dialog)
         self.control_widget.controls["new_puzzle"].textActivated.connect(
             self.load_puzzle
         )
@@ -112,7 +115,7 @@ class GuiTop:
 
     def _connect_updates(self):
         self.updater.updated.connect(self.control_widget.update_controls)
-        self.updater.updated.connect(self.puzzle_widget.update_sudoku)
+        self.updater.updated.connect(self.game_widget.update_sudoku)
         self.updater.updated.connect(self.right_docker.history_widget.update_history)
 
     def initialize(self) -> None:
@@ -122,7 +125,14 @@ class GuiTop:
     def load_puzzle(self, t: str) -> None:
         self.sudoku.load_sud(self.puzzles_list.puzzles[t])
         self.sudoku.initialize()
+        self.main_widget.setWindowTitle(f"{TITLE} - {t}")
         self.updater.updated.emit()
+
+    def open_puzzle_dialog(self) -> None:
+        self.puzzles_widget = PuzzleListWidget(
+            self.main_widget, self, self.puzzles_list, self.sizes
+        )
+        self.puzzles_widget.exec()
 
     def run_rule(self, rule: str) -> None:
         match rule:

@@ -37,6 +37,7 @@ class ControlsView(QWidget):
         # Create the Control and Rule Buttons
         self.controls = {
             "new_puzzle": QComboBox(),
+            "add": QPushButton("Add Puzzle (a)"),
             "start": QPushButton("Re-Start (r)"),
             "close": QPushButton("Exit (q)"),
             "history": QPushButton("History (h)"),

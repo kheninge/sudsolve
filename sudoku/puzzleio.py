@@ -6,6 +6,7 @@ class PuzzleList:
     def __init__(self, puzzle_file):
         self.yaml = YAML()
         self.puzzles = {}
+        self.puzzle_file = puzzle_file
         with open(puzzle_file, "r") as file:
             self.puzzles = self.yaml.load(file)
 
@@ -21,6 +22,9 @@ class PuzzleList:
     def write(self, puzzle_file: str):
         with open(puzzle_file, "w") as file:
             self.yaml.dump(self.puzzles, file)
+
+    def update(self):
+        self.write(self.puzzle_file)
 
 
 def convert_to_ns_format(puzzle: str) -> PuzzleFormat:
