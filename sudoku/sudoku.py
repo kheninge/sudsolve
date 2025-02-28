@@ -2,6 +2,7 @@ import logging
 from sudoku.history import History
 from sudoku.ninesquare import NineSquare
 from sudoku.defines import PuzzleFormat, SUD_SPACE_SIZE
+from sudoku.puzzleio import convert_to_ns_format
 from sudoku.ruleengine import RuleEngine
 from sudoku.rules import EliminationRule, SudokuRule
 
@@ -74,7 +75,12 @@ class Sudoku:
 
     ## Public API
     def load(self, puzzle: PuzzleFormat):
+        """puzzle given in PuzzleFormat format."""
         self.puzzle = puzzle
+
+    def load_sud(self, puzzle: str):
+        """puzzle given in sudoku format i.e. like the yaml file."""
+        self.load(convert_to_ns_format(puzzle))
 
     def initialize(self, history_mode=False) -> None:
         """Used to initialize state of the puzzle first time or to reset it for subsequent puzzles"""

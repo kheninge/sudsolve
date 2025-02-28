@@ -11,6 +11,7 @@ from PySide6.QtCore import Qt
 from gui.fixed_size_control import FixedSizeControl
 from gui.history_docker import RightDocker
 from sudoku.sudoku import Sudoku, PuzzleFormat
+from sudoku.puzzleio import PuzzleList
 
 
 class ControlsView(QWidget):
@@ -20,7 +21,7 @@ class ControlsView(QWidget):
     def __init__(
         self,
         sudoku: Sudoku,
-        puzzles_dict: dict[str, PuzzleFormat],
+        puzzles_list: PuzzleList,
         sizer: FixedSizeControl,
         docker: RightDocker,
     ) -> None:
@@ -28,7 +29,7 @@ class ControlsView(QWidget):
 
         self.sudoku = sudoku
         self.right_docker = docker
-        self.puzzles_dict = puzzles_dict
+        self.puzzles_list = puzzles_list
         self.control_height = sizer.app_width / 30
         self.control_width = sizer.app_width / 9
         self.rule_width = int(sizer.app_width / 7)
@@ -41,7 +42,7 @@ class ControlsView(QWidget):
             "history": QPushButton("History (h)"),
         }
         self.controls["new_puzzle"].setPlaceholderText("Choose a Puzzle")
-        self.controls["new_puzzle"].addItems(puzzles_dict.keys())
+        self.controls["new_puzzle"].addItems(puzzles_list.puzzles.keys())
         # Size the buttons
         for contr in self.controls:
             self.controls[contr].setFixedSize(self.control_width, self.control_height)

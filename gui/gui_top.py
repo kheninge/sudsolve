@@ -6,7 +6,8 @@ from gui.fixed_size_control import FixedSizeControl
 from gui.history_docker import RightDocker
 from gui.controls_view import ControlsView
 from gui.sudoku_game_views import SudokuView
-from sudoku.sudoku import Sudoku, PuzzleFormat
+from sudoku.sudoku import Sudoku
+from sudoku.puzzleio import PuzzleList
 import sudoku.rules
 from gui.update_controller import UpdateController
 
@@ -23,11 +24,11 @@ class GuiTop:
         self,
         app: QApplication,
         sudoku: Sudoku,
-        puzzles_dict: dict[str, PuzzleFormat],
+        puzzles_list: PuzzleList,
     ) -> None:
         super().__init__()
         self.sudoku = sudoku
-        self.puzzles_dict = puzzles_dict
+        self.puzzles_list = puzzles_list
         self.app = app
         self.sizes = FixedSizeControl(self.app, WIDTH_RATIO)
         self.updater = UpdateController()
@@ -36,7 +37,7 @@ class GuiTop:
         self.right_docker = RightDocker(self.sudoku)
         self.control_widget = ControlsView(
             self.sudoku,
-            self.puzzles_dict,
+            self.puzzles_list,
             self.sizes,
             self.right_docker,
         )
@@ -119,7 +120,7 @@ class GuiTop:
         self.updater.updated.emit()
 
     def load_puzzle(self, t: str) -> None:
-        self.sudoku.load(self.puzzles_dict[t])
+        self.sudoku.load_sud(self.puzzles_list.puzzles[t])
         self.sudoku.initialize()
         self.updater.updated.emit()
 

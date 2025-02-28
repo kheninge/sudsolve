@@ -3,3 +3,4 @@ pyside6
 pyyaml
 nuitka
 pytest-qt
+ruamel.yaml

@@ -10,6 +10,7 @@
 from PySide6.QtWidgets import QApplication
 from gui.gui_top import GuiTop
 from sudoku.sudoku import Sudoku, PuzzleFormat
+from sudoku.puzzleio import PuzzleList
 import yaml
 from pathlib import Path
 
@@ -17,39 +18,19 @@ PUZZLE_YAML_FILE = "sudoku.yaml"
 
 
 def main():
-    # Read the yaml file, convert the dictionary list to SudokuVal format
-    p = Path(__file__).with_name(PUZZLE_YAML_FILE)
-    with p.open("r") as file:
-        stored_puzzles = yaml.safe_load(file)
-    puzzles_ninesquare_fmt = convert_to_ns_format(stored_puzzles)
+    puzzles = PuzzleList(PUZZLE_YAML_FILE)
+    # # Read the yaml file, convert the dictionary list to SudokuVal format
+    # p = Path(__file__).with_name(PUZZLE_YAML_FILE)
+    # with p.open("r") as file:
+    #     stored_puzzles = yaml.safe_load(file)
+    # puzzles_ninesquare_fmt = convert_to_ns_format(stored_puzzles)
 
     # Model/Control
     solver = Sudoku()
     # Gui
     app = QApplication()
-    gui = GuiTop(app, solver, puzzles_ninesquare_fmt)
+    gui = GuiTop(app, solver, puzzles)
     gui.start()
-
-
-def convert_to_ns_format(puzzles: dict) -> dict[str, PuzzleFormat]:
-    converted_puzzle_d = {}
-    for title, puzzle in puzzles.items():
-        ns_list = []  # list of nine empty nineSquare lists
-        for i in range(9):
-            ns_list.append([])
-        for i, val in enumerate(str(puzzle)):
-            # 0 is a blank or a non solved cell
-            solution = None if val == "0" else int(val)
-            # Determine which nine-square to put the solution into
-            ns_col = (i % 9) // 3
-            ns_row = i // 27
-            ns_list[ns_row * 3 + ns_col].append(solution)
-        ns_tup = []
-        # Convert the list of lists to a tuple of tuples and add it to a dictionary of puzzles
-        for i in ns_list:
-            ns_tup.append(tuple(i))
-        converted_puzzle_d[title] = tuple(ns_tup)
-    return converted_puzzle_d
 
 
 if __name__ == "__main__":
