@@ -38,6 +38,7 @@ class Sudoku:
         self.ns: list[NineSquare] = [NineSquare(i) for i in range(SUD_SPACE_SIZE)]
         self.cells = []
         self.sublines = []
+        self.puzzle = None
         for n in self.ns:
             for c in n.cells:
                 self.cells.append(c)
@@ -85,7 +86,7 @@ class Sudoku:
     def initialize(self, history_mode=False) -> None:
         """Used to initialize state of the puzzle first time or to reset it for subsequent puzzles"""
         if not self.puzzle:
-            logger.warning("initialize called without an init being loaded. Do nothing")
+            logger.info("initialize called without an init being loaded. Do nothing")
         else:
             if not history_mode:
                 self.history.clear()
