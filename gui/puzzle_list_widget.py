@@ -99,7 +99,7 @@ class PuzzleListWidget(QDialog):
         left_layout.addWidget(self.item_list)
 
         for item in self.puzzles.puzzles.keys():
-            self.add_item_with_delete(item)
+            self._add_item_with_delete(item)
 
         content_splitter.addWidget(left_panel)
 
@@ -145,7 +145,7 @@ class PuzzleListWidget(QDialog):
         for k, func in shortcuts.items():
             QShortcut(QKeySequence(k), self).activated.connect(func)
 
-    def add_item_with_delete(self, text):
+    def _add_item_with_delete(self, text):
         """Add an item to the list with a delete icon"""
         list_item = QListWidgetItem(self.item_list)
         item_widget = ItemWidget(text)
@@ -223,6 +223,6 @@ class PuzzleListWidget(QDialog):
     def load_selected_item(self):
         selected_puzzle = self.item_list.currentItem()
         if selected_puzzle:
-            text = selected_puzzle.data(Qt.ItemDataRole.UserRole)
-            self.gui_top.load_puzzle(text)
+            puzzle_text = selected_puzzle.data(Qt.ItemDataRole.UserRole)
+            self.gui_top.load_puzzle(puzzle_text)
             self.accept()
