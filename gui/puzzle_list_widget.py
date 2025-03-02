@@ -120,7 +120,7 @@ class PuzzleListWidget(QDialog):
         # Set initial splitter sizes (25% left, 75% right)
         content_splitter.setSizes([200, 600])
 
-        button_layout = QHBoxLayout(self)
+        button_layout = QHBoxLayout()
         # Create cancel button
         self.cancel_button = QPushButton("Cancel")
         self.cancel_button.clicked.connect(self.close)
