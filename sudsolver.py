@@ -15,6 +15,7 @@ import yaml
 from pathlib import Path
 
 PUZZLE_YAML_FILE = "sudoku.yaml"
+HELP_FILE = "help.md"
 
 
 def main():
@@ -29,7 +30,7 @@ def main():
     solver = Sudoku()
     # Gui
     app = QApplication()
-    gui = GuiTop(app, solver, puzzles)
+    gui = GuiTop(app, solver, puzzles, HELP_FILE)
     gui.start()
 
 

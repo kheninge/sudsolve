@@ -41,6 +41,7 @@ class ControlsView(QWidget):
             "start": QPushButton("Re-Start (r)"),
             "close": QPushButton("Exit (q)"),
             "history": QPushButton("History (h)"),
+            "help": QPushButton("Help (p)"),
         }
         # self.controls["new_puzzle"].setPlaceholderText("Choose a Puzzle")
         # self.controls["new_puzzle"].addItems(puzzles_list.puzzles.keys())

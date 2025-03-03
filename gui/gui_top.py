@@ -7,6 +7,7 @@ from gui.history_docker import RightDocker
 from gui.controls_view import ControlsView
 from gui.sudoku_game_views import SudokuView
 from gui.puzzle_list_widget import PuzzleListWidget
+from gui.markdown_view import MarkdownViewer
 from sudoku.sudoku import Sudoku
 from sudoku.puzzleio import PuzzleList
 import sudoku.rules
@@ -26,10 +27,12 @@ class GuiTop:
         app: QApplication,
         sudoku: Sudoku,
         puzzles_list: PuzzleList,
+        help_file: str,
     ) -> None:
         super().__init__()
         self.sudoku = sudoku
         self.puzzles_list = puzzles_list
+        self.help_file = help_file
         self.app = app
         self.sizes = FixedSizeControl(self.app, WIDTH_RATIO)
         self.updater = UpdateController()
@@ -67,6 +70,7 @@ class GuiTop:
             "k": self.back,
             "p": self.prune,
             "d": self.delete,
+            "p": self.help,
             "0": lambda: self.run_rule("eliminate_visible"),
             "1": lambda: self.run_rule("elimination_to_one"),
             "2": lambda: self.run_rule("single_possible_location"),
@@ -88,6 +92,7 @@ class GuiTop:
         self.control_widget.controls["history"].clicked.connect(
             self.toggle_history_dock
         )
+        self.control_widget.controls["help"].clicked.connect(self.help)
         # Rules Buttons
         self.control_widget.rules["elimination"].clicked.connect(
             lambda: self.run_rule("eliminate_visible")
@@ -133,6 +138,10 @@ class GuiTop:
             self.main_widget, self, self.puzzles_list, self.sizes
         )
         self.puzzles_widget.exec()
+
+    def help(self) -> None:
+        self.help_widget = MarkdownViewer(self.help_file)
+        self.help_widget.exec()
 
     def run_rule(self, rule: str) -> None:
         match rule:

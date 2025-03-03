@@ -4,3 +4,4 @@ pyyaml
 nuitka
 pytest-qt
 ruamel.yaml
+markdown
