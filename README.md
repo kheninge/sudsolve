@@ -1,7 +1,8 @@
-# sudsolve
-A suduko solving assistant
+# Sudoku Assistant (sudsolve)
 
-Take a shot at defining my own suduko solver as a way to hone my python skills and to implement a Qt gui. The approach here is not to create a solver that will brute force any puzzle, but rather to create rules for logical inference and then allow the user to run those rules in whatever order they choose. When there are no more solutions that can be found through the logical rules the user can choose a solution and see it through to see if it leads to an error or a solution.
+The Sudoku Assistant isn't a Sudoku solver per se. Rather it is a tool that could help you solve Sudoku puzzles. It was written as an exercise for the author in writing Qt GUI programs and as a way to explore Sudoku solutions through the use of logical inferences. The author has not studied any Sudoku solutions or theory and so the nomenclature used below is unique to this program and will not match up with terminology used in the Sudoku community. Also the following list of inference rules is very likely not a complete list of all possible rules, it is just the ones that he was able to come up with on his own.
+
+The code is open source and provided for use without any license. 
 
 ## Release
 
