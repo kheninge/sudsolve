@@ -70,6 +70,9 @@ class PuzzleListWidget(QDialog):
         self.setFixedSize(int(sizes.app_width * 0.60), int(sizes.app_height * 0.60))
         self.setWindowTitle("Puzzles")
         self.setModal(True)
+        self.verified_new_puzzle_name = None
+        self.verified_new_puzzle_input = None
+        self.new_puzzle_name_error = False
 
         # Create main layout
         main_layout = QVBoxLayout(self)
@@ -133,9 +136,34 @@ class PuzzleListWidget(QDialog):
         button_layout.addWidget(self.load_button)
         main_layout.addLayout(button_layout)
 
+        # Add New Puzzle section
+        add_new_layout = QHBoxLayout()
+        add_label = QLabel()
+        add_label.setText("Add a new puzzle:")
+        main_layout.addWidget(add_label)
+        ## Create field for inputting new puzzle name
+        self.new_name = QLineEdit()
+        self.new_name.setPlaceholderText("New Puzzle Name")
+        self.new_name.textChanged.connect(self.check_new_puzzle_name)
+        add_new_layout.addWidget(self.new_name)
+        ## Create field for inputting new puzzles
+        self.new_field = QLineEdit()
+        self.new_field.setPlaceholderText("New Puzzle Values 0-9; 0 for blank")
+        self.new_field.textChanged.connect(self.check_new_puzzle_input)
+        add_new_layout.addWidget(self.new_field)
+        ## Create save button
+        self.save_button = QPushButton("Save")
+        self.save_button.clicked.connect(self.save_new_puzzle)
+        self.save_button.setEnabled(False)  # Disabled until the full puzzle is input
+        add_new_layout.addWidget(self.save_button)
+        main_layout.addLayout(add_new_layout)
+
         # Apply the layout
         self.setLayout(main_layout)
         self._define_shortcuts()
+
+        # Get the default text to display in the preview
+        self.update_preview(None, None)
 
     def _define_shortcuts(self):
         # Define Shortcuts
@@ -192,9 +220,49 @@ class PuzzleListWidget(QDialog):
             item_text = item.data(Qt.ItemDataRole.UserRole)
             item.setHidden(text.lower() not in item_text.lower())
 
+    def check_new_puzzle_name(self, name):
+        """Check if the new puzzle name is valid and enable the save button"""
+        self.new_puzzle_name_error = False
+        if name:
+            if name in self.puzzles.puzzles.keys():
+                self.save_button.setEnabled(False)
+                self.new_puzzle_name_error = True
+                self.verified_new_puzzle_name = None
+            else:
+                self.verified_new_puzzle_name = name
+            self.update_preview(None, None)
+        else:
+            self.verified_new_puzzle_name = None
+
+    def check_new_puzzle_input(self, input):
+        """Check if the new puzzle input is valid and enable the save button"""
+        self.new_puzzle_input_error = False
+        for c in input:
+            if c not in {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}:
+                self.new_puzzle_input_error = True
+        if not self.new_puzzle_name_error and len(input) == 81:
+            self.verified_new_puzzle_input = input
+        if self.verified_new_puzzle_name and self.verified_new_puzzle_input:
+            self.save_button.setEnabled(True)
+            self.save_button.setDefault(True)
+        else:
+            self.save_button.setEnabled(False)
+
+    def save_new_puzzle(self):
+        """Save the new puzzle to the list"""
+        puzzle_name = self.verified_new_puzzle_name
+        puzzle_string = self.verified_new_puzzle_input
+        self.puzzles.add(puzzle_name, puzzle_string)
+        self.puzzles.update()
+        self._load_puzzle_and_exit(self.verified_new_puzzle_name)
+
     def update_preview(self, current, previous):
         """Update the preview area when a new item is selected"""
-        if current:
+        if self.new_puzzle_name_error:
+            self.preview_area.setText("Give the new puzzle a unique name")
+            self.load_button.setEnabled(False)
+            self.cancel_button.setDefault(True)
+        elif current:
             self.load_button.setEnabled(True)
             self.load_button.setDefault(True)
             file_name = current.text()
@@ -220,9 +288,12 @@ class PuzzleListWidget(QDialog):
             self.cancel_button.setDefault(True)
             self.preview_area.setText("No item selected")
 
+    def _load_puzzle_and_exit(self, puzzle_name):
+        self.gui_top.load_puzzle(puzzle_name)
+        self.accept()
+
     def load_selected_item(self):
         selected_puzzle = self.item_list.currentItem()
         if selected_puzzle:
             puzzle_text = selected_puzzle.data(Qt.ItemDataRole.UserRole)
-            self.gui_top.load_puzzle(puzzle_text)
-            self.accept()
+            self._load_puzzle_and_exit(puzzle_text)

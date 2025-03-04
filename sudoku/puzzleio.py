@@ -7,8 +7,7 @@ class PuzzleList:
         self.yaml = YAML()
         self.puzzles = {}
         self.puzzle_file = puzzle_file
-        with open(puzzle_file, "r") as file:
-            self.puzzles = self.yaml.load(file)
+        self.read()
 
     def delete(self, puzzle: str):
         del self.puzzles[puzzle]
@@ -19,12 +18,17 @@ class PuzzleList:
             return
         self.puzzles[puzzle] = puzzle_str
 
+    def read(self):
+        with open(self.puzzle_file, "r") as file:
+            self.puzzles = self.yaml.load(file)
+
     def write(self, puzzle_file: str):
         with open(puzzle_file, "w") as file:
             self.yaml.dump(self.puzzles, file)
 
     def update(self):
         self.write(self.puzzle_file)
+        self.read()
 
 
 def convert_to_ns_format(puzzle: str) -> PuzzleFormat:
