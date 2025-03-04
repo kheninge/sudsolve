@@ -9,10 +9,8 @@
 
 from PySide6.QtWidgets import QApplication
 from gui.gui_top import GuiTop
-from sudoku.sudoku import Sudoku, PuzzleFormat
+from sudoku.sudoku import Sudoku
 from sudoku.puzzleio import PuzzleList
-import yaml
-from pathlib import Path
 
 PUZZLE_YAML_FILE = "sudoku.yaml"
 HELP_FILE = "help.md"
@@ -20,11 +18,6 @@ HELP_FILE = "help.md"
 
 def main():
     puzzles = PuzzleList(PUZZLE_YAML_FILE)
-    # # Read the yaml file, convert the dictionary list to SudokuVal format
-    # p = Path(__file__).with_name(PUZZLE_YAML_FILE)
-    # with p.open("r") as file:
-    #     stored_puzzles = yaml.safe_load(file)
-    # puzzles_ninesquare_fmt = convert_to_ns_format(stored_puzzles)
 
     # Model/Control
     solver = Sudoku()
