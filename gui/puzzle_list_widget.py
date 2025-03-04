@@ -67,7 +67,7 @@ class PuzzleListWidget(QDialog):
         self.puzzles = puzzles
         self.parent = parent
         self.gui_top = gui_top
-        self.setFixedSize(int(sizes.app_width * 0.60), int(sizes.app_height * 0.60))
+        self.setFixedSize(int(sizes.app_width * 0.60), int(sizes.app_height * 0.30))
         self.setWindowTitle("Puzzles")
         self.setModal(True)
         self.verified_new_puzzle_name = None
@@ -116,6 +116,7 @@ class PuzzleListWidget(QDialog):
 
         self.preview_area = QTextEdit()
         self.preview_area.setReadOnly(True)
+        self.preview_area.setFontPointSize(16)
         right_layout.addWidget(self.preview_area)
 
         content_splitter.addWidget(right_panel)
@@ -138,6 +139,8 @@ class PuzzleListWidget(QDialog):
 
         # Add New Puzzle section
         add_new_layout = QHBoxLayout()
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+        add_new_layout.addWidget(splitter)
         add_label = QLabel()
         add_label.setText("Add a new puzzle:")
         main_layout.addWidget(add_label)
@@ -145,12 +148,13 @@ class PuzzleListWidget(QDialog):
         self.new_name = QLineEdit()
         self.new_name.setPlaceholderText("New Puzzle Name")
         self.new_name.textChanged.connect(self.check_new_puzzle_name)
-        add_new_layout.addWidget(self.new_name)
+        splitter.addWidget(self.new_name)
         ## Create field for inputting new puzzles
         self.new_field = QLineEdit()
         self.new_field.setPlaceholderText("New Puzzle Values 0-9; 0 for blank")
         self.new_field.textChanged.connect(self.check_new_puzzle_input)
-        add_new_layout.addWidget(self.new_field)
+        splitter.addWidget(self.new_field)
+        splitter.setSizes([200, 600])
         ## Create save button
         self.save_button = QPushButton("Save")
         self.save_button.clicked.connect(self.save_new_puzzle)
@@ -237,8 +241,11 @@ class PuzzleListWidget(QDialog):
     def check_new_puzzle_input(self, input):
         """Check if the new puzzle input is valid and enable the save button"""
         self.new_puzzle_input_error = False
+        self.verified_new_puzzle_input = None
         for c in input:
-            if c not in {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}:
+            if c not in {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"}:
+                self.new_puzzle_input_error = True
+            if len(input) > 81:
                 self.new_puzzle_input_error = True
         if not self.new_puzzle_name_error and len(input) == 81:
             self.verified_new_puzzle_input = input
@@ -247,6 +254,13 @@ class PuzzleListWidget(QDialog):
             self.save_button.setDefault(True)
         else:
             self.save_button.setEnabled(False)
+        # Call preview
+        if self.new_puzzle_input_error:
+            self.update_preview(None, None, False, input_error=True)
+        else:
+            self.update_preview(
+                None, None, new_input_mode=True, input_error=False, preview_text=input
+            )
 
     def save_new_puzzle(self):
         """Save the new puzzle to the list"""
@@ -256,37 +270,59 @@ class PuzzleListWidget(QDialog):
         self.puzzles.update()
         self._load_puzzle_and_exit(self.verified_new_puzzle_name)
 
-    def update_preview(self, current, previous):
+    def update_preview(
+        self,
+        current,
+        previous,
+        new_input_mode=False,
+        input_error=False,
+        preview_text=None,
+    ):
         """Update the preview area when a new item is selected"""
+
+        ##  Handle error messages and load/cancel_buttons
         if self.new_puzzle_name_error:
-            self.preview_area.setText("Give the new puzzle a unique name")
+            # self.preview_area.setText("<b>Error:</b>Give the new puzzle a unique name")
+            saved_format = self.preview_area.currentCharFormat()
+            self.preview_area.setTextColor(Qt.GlobalColor.red)
+            self.preview_area.setText("Error:Give the new puzzle a unique name")
+            self.preview_area.setCurrentCharFormat(saved_format)
             self.load_button.setEnabled(False)
             self.cancel_button.setDefault(True)
+        elif input_error:
+            saved_format = self.preview_area.currentCharFormat()
+            self.preview_area.setTextColor(Qt.GlobalColor.red)
+            self.preview_area.setText(
+                "Input Error: Enter only 0-9, use 0 for spaces. Input only 81 characters"
+            )
+            self.preview_area.setCurrentCharFormat(saved_format)
+            self.load_button.setEnabled(False)
+            self.cancel_button.setDefault(True)
+
         elif current:
             self.load_button.setEnabled(True)
             self.load_button.setDefault(True)
-            file_name = current.text()
-            file_ext = file_name.split(".")[-1].lower()
-
-            # Generate a preview based on file type
-            if file_ext in ["jpg", "png", "gif", "bmp"]:
-                preview_text = f"[Image Preview for {file_name}]\n\nType: Image File\nFormat: {file_ext.upper()}"
-            elif file_ext in ["pdf"]:
-                preview_text = f"[PDF Document Preview for {file_name}]\n\nType: PDF Document\nPages: 12"
-            elif file_ext in ["docx", "doc"]:
-                preview_text = f"[Word Document Preview for {file_name}]\n\nType: Word Document\nPages: 8\nContains: Text, Tables"
-            elif file_ext in ["xlsx", "xls"]:
-                preview_text = f"[Spreadsheet Preview for {file_name}]\n\nType: Excel Spreadsheet\nSheets: 3\nContains: Data, Charts"
-            elif file_ext in ["txt", "md"]:
-                preview_text = f"[Text Preview for {file_name}]\n\nType: Text File\nSize: 2.4 KB\n\nThis is a sample text content that would be displayed in the preview area. Actual implementation would load the real content."
-            else:
-                preview_text = f"[Preview for {file_name}]\n\nType: {file_ext.upper()} File\nNo preview available."
-
-            self.preview_area.setText(preview_text)
+            preview_text = self.puzzles.puzzles[current.data(Qt.ItemDataRole.UserRole)]
+        elif new_input_mode:
+            self.load_button.setEnabled(False)
+            self.save_button.setDefault(True)
         else:
+            self.preview_area.setText("No item selected")
             self.load_button.setEnabled(False)
             self.cancel_button.setDefault(True)
-            self.preview_area.setText("No item selected")
+        preview = []
+        if preview_text and not input_error and not self.new_puzzle_name_error:
+            for i, c in enumerate(preview_text):
+                if i % 9 == 0:
+                    preview.append("\n")
+                if c == "0":
+                    preview.append("X")
+                else:
+                    preview.append(c)
+            saved_format = self.preview_area.currentCharFormat()
+            self.preview_area.setFontPointSize(30)
+            self.preview_area.setText(" ".join(preview))
+            self.preview_area.setCurrentCharFormat(saved_format)
 
     def _load_puzzle_and_exit(self, puzzle_name):
         self.gui_top.load_puzzle(puzzle_name)
