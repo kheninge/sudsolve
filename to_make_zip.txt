@@ -1,0 +1,4 @@
+# copy and paste the following into the powershell.
+# Unfortunately I can't figure out how to make this work in a bat file, haven't put a lot of effort into it
+
+& 'C:\Program Files\7-Zip\7z.exe' a -tzip sudsolver.zip sudsolver.exe help.md sudoku.yaml
