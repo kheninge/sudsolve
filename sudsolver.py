@@ -7,6 +7,7 @@
 #
 # Linux Compile command: python3 -m nuitka sudsolver.py
 
+import os
 from PySide6.QtWidgets import QApplication
 from gui.gui_top import GuiTop
 from sudoku.sudoku import Sudoku
@@ -17,13 +18,16 @@ HELP_FILE = "help.md"
 
 
 def main():
-    puzzles = PuzzleList(PUZZLE_YAML_FILE)
+    path = os.path.dirname(__file__)
+    yaml_full_path = os.path.join(path, PUZZLE_YAML_FILE)
+    help_full_path = os.path.join(path, HELP_FILE)
+    puzzles = PuzzleList(yaml_full_path)
 
     # Model/Control
     solver = Sudoku()
     # Gui
     app = QApplication()
-    gui = GuiTop(app, solver, puzzles, HELP_FILE)
+    gui = GuiTop(app, solver, puzzles, help_full_path)
     gui.start()
 
 
