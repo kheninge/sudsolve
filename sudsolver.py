@@ -2,11 +2,13 @@
 
 # The below lines are read by the nuitka tool used to compile this script
 # nuitka-project: --include-data-files={MAIN_DIRECTORY}/sudoku.yaml=sudoku.yaml
+# nuitka-project: --include-data-files={MAIN_DIRECTORY}/help.md=help.md
 # nuitka-project: --enable-plugin=pyside6
-# nuitka-project: --mode=onefile
+# nuitka-project: --mode=standalone
 #
 # Linux Compile command: python3 -m nuitka sudsolver.py
 
+import sys
 import os
 from PySide6.QtWidgets import QApplication
 from gui.gui_top import GuiTop
@@ -18,7 +20,7 @@ HELP_FILE = "help.md"
 
 
 def main():
-    path = os.path.dirname(__file__)
+    path = os.path.dirname(sys.argv[0])
     yaml_full_path = os.path.join(path, PUZZLE_YAML_FILE)
     help_full_path = os.path.join(path, HELP_FILE)
     puzzles = PuzzleList(yaml_full_path)
