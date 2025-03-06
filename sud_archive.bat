@@ -1,0 +1,1 @@
+'C:\Program Files\7-Zip\7z.exe' a -tzip sudsolver.zip sudsolver.exe help.md sudoku.yaml

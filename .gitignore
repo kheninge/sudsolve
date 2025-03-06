@@ -3,3 +3,5 @@ pytest.log
 sudsolver.bin
 sudsolver.dist
 profile*
+venv
+Output
